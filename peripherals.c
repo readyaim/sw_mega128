@@ -125,3 +125,8 @@ void main_watchdog(void)
         PORTF = 0X00;   //Turn on LED
     }
 }
+
+void feed_watchdog(void)
+{
+    WDR();
+}
