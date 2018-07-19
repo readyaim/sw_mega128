@@ -1,6 +1,6 @@
 //ICC-AVR application builder : 2012/2/13 20:52:33
 /*******************************************************************************
-* from Home-Win7
+* from Home-Win7, work-HP
 * 单片机:   ATMAGE128A AU 1036
 * 晶振:     外部8MHz
 * 编译器:   ICC 7.22
