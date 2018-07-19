@@ -7,19 +7,13 @@
 #include "global.h"
 #include "TWI.h"
 
- /**************************************
- **********发送缓存区*******************
- ***************************************/
-/*Transmit buffer*/
+/*Transmit data buffer*/
 UINT8 TWI_SendData[TWI_BUFFER_SIZE];
 //Flag of writing done;
 UINT8 TWI_Write_Finish = 0;
 
 
-/**************************************
-**********发送缓存区*******************
-**************************************/
-/*Receive buffer*/
+/*Receive data buffer*/
 UINT8 TWI_ReceData[TWI_BUFFER_SIZE];
 /*finish reading flag*/
 UINT8 TWI_Read_Finish = 0;
@@ -85,15 +79,9 @@ UINT8 TWI_GetReceByte(void)
     return (TWDR);
 }
 
-
-/****************************************
-**********功 能： 单字节发送数据 ******
-**********输入参数： 发送的数据   ******
-**********返回 值： 无   ******
-****************************************/
 /*******************************************************************************
 * Function:     TWI_SendByte()
-* Arguments:  Data to be sent   
+* Arguments:  the 1 byte Data to be sent   
 * Return:       
 * Description: Send out 1 byte
 *******************************************************************************/
@@ -112,12 +100,12 @@ void TWI_RecByteAck(UINT8 AckFlag)
 {
     if (AckFlag)
     {
-        //Ack=true,接受数据完成应答回复;
+        //Send ACK after data received
         TWI_ReceACK();
     }
     else
     {
-        //接收完成后不应答;
+        //No ACK after data received
         TWI_ReceNACK();
     }
 }
@@ -138,17 +126,17 @@ void TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 length, UINT8 *pData)
     IIC_DeviceAddr = (DeviceAddr & 0xFE);   
     //Start Sending data
     TWI_StartTransmition();
-    //等待写操作完成;
-    while (!TWI_Write_Finish)
+    //waiting for write data to be finished
+    while (!TWI_Write_Finish)   
     {
         //wdt_reset();
         feed_watchdog();
     }
-    //清楚写操作标志;
+    //reset write finished flag
     TWI_Write_Finish = 0;
-    //发送停止条件;
+    //send STO
     TWI_Stop();
-    //关闭中断;
+    //disable TWI interrupt
     Disable_Interrupt_TWI();
 }
 
@@ -209,9 +197,6 @@ void TWI_ReadFromDevice(UINT8 DeviceAddr, UINT8 length)
 }
 
 
-/***********************************************************************
-**************中断函数**************************************************
-************************************************************************/
 /*******************************************************************************
 * Function:     TWI_isr()
 * Arguments:  
@@ -234,7 +219,7 @@ void TWI_isr(void)
             TWI_SendByte(IIC_DeviceAddr);   //Send slave device address, ??? Need to check if TWIE ==1
             break;
             // 使能TWI总线, 使能TWI中断, 发送RESTART信号;
-        case TWI_ARB_LOST:
+        case TWI_ARB_LOST:  
             //启动TWI;
             TWI_Start();
             break;
