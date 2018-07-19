@@ -1,4 +1,4 @@
-﻿## ignore all files
+# ignore all files
 *
 ## ignore all folders
 !/**/
