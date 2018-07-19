@@ -17,10 +17,6 @@
 //#include "config.h"
 
 
-
-
-
-
 ////硬件中断模式;
 //#define TWI_IIC_MODE 0
 ////硬件查询模式;
