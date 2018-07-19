@@ -1,37 +1,37 @@
-ï»¿
-1ã€åˆ›å»ºæœ¬åœ°åˆ†æ”¯ local_branch
+
+1¡¢´´½¨±¾µØ·ÖÖ§ local_branch
    git branch local_branch
 
-2ã€åˆ›å»ºæœ¬åœ°åˆ†æ”¯local_branch å¹¶åˆ‡æ¢åˆ°local_branchåˆ†æ”¯
+2¡¢´´½¨±¾µØ·ÖÖ§local_branch ²¢ÇĞ»»µ½local_branch·ÖÖ§
    git checkout -b local_branch
 
-3ã€åˆ‡æ¢åˆ°åˆ†æ”¯local_branch
+3¡¢ÇĞ»»µ½·ÖÖ§local_branch
     git checkout local_branch
 
-4ã€æ¨é€æœ¬åœ°åˆ†æ”¯local_branchåˆ°è¿œç¨‹åˆ†æ”¯ remote_branchå¹¶å»ºç«‹å…³è”å…³ç³»
-      a.è¿œç¨‹å·²æœ‰remote_branchåˆ†æ”¯å¹¶ä¸”å·²ç»å…³è”æœ¬åœ°åˆ†æ”¯local_branchä¸”æœ¬åœ°å·²ç»åˆ‡æ¢åˆ°local_branch
+4¡¢ÍÆËÍ±¾µØ·ÖÖ§local_branchµ½Ô¶³Ì·ÖÖ§ remote_branch²¢½¨Á¢¹ØÁª¹ØÏµ
+      a.Ô¶³ÌÒÑÓĞremote_branch·ÖÖ§²¢ÇÒÒÑ¾­¹ØÁª±¾µØ·ÖÖ§local_branchÇÒ±¾µØÒÑ¾­ÇĞ»»µ½local_branch
           git push
-     b.è¿œç¨‹å·²æœ‰remote_branchåˆ†æ”¯ä½†æœªå…³è”æœ¬åœ°åˆ†æ”¯local_branchä¸”æœ¬åœ°å·²ç»åˆ‡æ¢åˆ°local_branch
+     b.Ô¶³ÌÒÑÓĞremote_branch·ÖÖ§µ«Î´¹ØÁª±¾µØ·ÖÖ§local_branchÇÒ±¾µØÒÑ¾­ÇĞ»»µ½local_branch
          git push -u origin/remote_branch
-     c.è¿œç¨‹æ²¡æœ‰æœ‰remote_branchåˆ†æ”¯å¹¶ï¼Œæœ¬åœ°å·²ç»åˆ‡æ¢åˆ°local_branch
+     c.Ô¶³ÌÃ»ÓĞÓĞremote_branch·ÖÖ§²¢£¬±¾µØÒÑ¾­ÇĞ»»µ½local_branch
         git push origin local_branch:remote_branch
 
-5ã€åˆ é™¤æœ¬åœ°åˆ†æ”¯local_branch
+5¡¢É¾³ı±¾µØ·ÖÖ§local_branch
       git branch -d local_branch
 
-6ã€åˆ é™¤è¿œç¨‹åˆ†æ”¯remote_branch
+6¡¢É¾³ıÔ¶³Ì·ÖÖ§remote_branch
      git push origin  :remote_branch
-     git branch -m | -M oldbranch newbranch é‡å‘½ååˆ†æ”¯ï¼Œå¦‚æœnewbranchåå­—åˆ†æ”¯å·²ç»å­˜åœ¨ï¼Œåˆ™éœ€è¦ä½¿ç”¨-Må¼ºåˆ¶é‡å‘½åï¼Œå¦åˆ™ï¼Œä½¿ç”¨-mè¿›è¡Œé‡å‘½åã€‚
-   git branch -d | -D branchname åˆ é™¤branchnameåˆ†æ”¯
-   git branch -d -r branchname åˆ é™¤è¿œç¨‹branchnameåˆ†æ”¯
+     git branch -m | -M oldbranch newbranch ÖØÃüÃû·ÖÖ§£¬Èç¹ûnewbranchÃû×Ö·ÖÖ§ÒÑ¾­´æÔÚ£¬ÔòĞèÒªÊ¹ÓÃ-MÇ¿ÖÆÖØÃüÃû£¬·ñÔò£¬Ê¹ÓÃ-m½øĞĞÖØÃüÃû¡£
+   git branch -d | -D branchname É¾³ıbranchname·ÖÖ§
+   git branch -d -r branchname É¾³ıÔ¶³Ìbranchname·ÖÖ§
 
-7ã€æŸ¥çœ‹æœ¬åœ°åˆ†æ”¯
+7¡¢²é¿´±¾µØ·ÖÖ§
       git branch
 
-8ã€æŸ¥çœ‹è¿œç¨‹å’Œæœ¬åœ°åˆ†æ”¯
+8¡¢²é¿´Ô¶³ÌºÍ±¾µØ·ÖÖ§
       git branch -a
 -------------------------
-#å…³äºä»remoteå–åˆ†æ”¯
+#¹ØÓÚ´ÓremoteÈ¡·ÖÖ§
 git branch -a               //check remote branch
 git fetch origin            //get all branch from remote
 git fetch origin branch1
@@ -111,7 +111,7 @@ success!!!
     
     
 --------------------------------------
-â€¦or create a new repository on the command line
+¡­or create a new repository on the command line
 
 echo "# try1" >> README.md
 git init
@@ -119,19 +119,19 @@ git add README.md
 git commit -m "first commit"
 git remote add origin git@github.com:readyaim/try1.git
 git push -u origin master
-â€¦or push an existing repository from the command line
+¡­or push an existing repository from the command line
 
 git remote add origin git@github.com:readyaim/try1.git
 git push -u origin master
-â€¦or import code from another repository
+¡­or import code from another repository
 You can initialize this repository with code from a Subversion, Mercurial, or TFS project.
 g
 Import code
 ------------------------------
-æŸ¥çœ‹addåï¼Œindexä¸ä¹‹å‰indexçš„å·®åˆ«
+²é¿´addºó£¬indexÓëÖ®Ç°indexµÄ²î±ğ
 git diff --cached
 -----------------------------
-unstage fileã€‚æ’¤é”€addå‘½ä»¤ï¼Œwork directoryå’Œrepoéƒ½ä¸å˜åŒ–
+unstage file¡£³·ÏúaddÃüÁî£¬work directoryºÍrepo¶¼²»±ä»¯
 git reset HEAD~n filename
 --------------------------
 add+commit
