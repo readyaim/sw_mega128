@@ -2,10 +2,10 @@
 #include "fifo.h"
 
 /*******************************************************************************
-* 函数名称: processCmd()
-* 入口参数: data
-* 出口参数:
-* 功能描述: 处理Fifo内的命令
+* Function:  processCmd()
+* Arguments:  data
+* Return: 
+* Description:  处理Fifo内的命令
 *******************************************************************************/
 void processCmd(UINT8 data)
 {
@@ -108,10 +108,10 @@ void processCmd(UINT8 data)
     return;
 }
 /*******************************************************************************
-* 函数名称: main_processCmd()
-* 入口参数: 
-* 出口参数:
-* 功能描述: 处理命令的入口函数
+* Function:  main_processCmd()
+* Arguments:  
+* Return: 
+* Description:  处理命令的入口函数
 *******************************************************************************/
 void main_processCmd(void)
 {

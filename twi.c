@@ -2,6 +2,7 @@
  *  TWI.c
  *  Created: 2015/10/30 14:48:50
  *  Author: Administrator
+ * Function: TWI driver
  ******************************/
 #include "global.h"
 #include "TWI.h"
@@ -9,65 +10,76 @@
  /**************************************
  **********发送缓存区*******************
  ***************************************/
+/*Transmit buffer*/
 UINT8 TWI_SendData[TWI_BUFFER_SIZE];
-//发送完成标志位;
+//Flag of writing done;
 UINT8 TWI_Write_Finish = 0;
 
 
 /**************************************
 **********发送缓存区*******************
 **************************************/
+/*Receive buffer*/
 UINT8 TWI_ReceData[TWI_BUFFER_SIZE];
-//读取完成标志位;
+/*finish reading flag*/
 UINT8 TWI_Read_Finish = 0;
 
 
-//定义传输数据长度;
+/*Data length*/
 UINT8 TWI_DataLength = 0;
 UINT8 TWI_Index = 0;
-//定义IIC设备的地址;
+
+/*Device Address*/
 UINT8 IIC_DeviceAddr = 0;
+
+/*feed watch dog*/
 extern void feed_watchdog(void);
 
-/***************************************
-**********功 能： TWI初始化***********
-**********输入参数： 无 ***********
-**********返回 值： 无 ***********
-****************************************/
+/*******************************************************************************
+* Function:  TWI_Init()
+* Arguments:
+* Return:
+* Description:  Initiate TWI devices
+*******************************************************************************/
 void TWI_Init(void)
 {
     //Enable Pull-up resistor for portC(TWI port);
     Clr_Bit(SFIOR, PUD);    //enable all PUs
-    DDRD &= (~((1 << DDD0) | (1 << DDD1)));   //enable PU of SCL and SDA
-    PORTD |= (1 << DDD0) | (1 << DDD1);   //PU is enable by setting: "input" & PORTx=1
-    TWCR = (1 << TWEN);     //Set PD0/PD1 as TWI port, not GPIO;
+    TWI_PORT_DDR &= (~((1 << SDA_Pin) | (1 << SCL_Pin)));   //enable PU of SCL and SDA
+    TWI_PORT |= (1 << SDA_Pin) | (1 << SCL_Pin);   //PU is enable by setting: "input" & PORTx=1
+    //TWCR = (1 << TWEN);     
+    Set_Bit(TWCR, TWEN);    //Set PD0/PD1 as TWI port, not GPIO;
     //Setup frequency of TWI;
     TWBR = TWI_BitRate(100);
-    //Release SDA bus
-    TWDR = 0xff;
+    //Release SDA bus, ????
+    TWDR = 0xff;        
 
 }
-/***************************************
-**********功 能： TWI时钟设置 ********
-**********输入参数： 设置速率 ********
-**********返回 值： TWBR的值   ********
-****************************************/
+
+/*******************************************************************************
+* Function:  TWI_BitRate()
+* Arguments: frequency(in KHz)
+* Return:       TWBR value
+* Description:  Caculate TWI frequency
+*******************************************************************************/
 UINT8 TWI_BitRate(UINT16 BitRateKHZ)
 {
     if ((CPU_CLK / 1000) < (BitRateKHZ * 36))
     {
-        return 10;
+        return 10;      //TWBR must be larger than 10
     }
     else
     {
         return (UINT8)((((CPU_CLK / 1000) / BitRateKHZ) - 16) / 2);
     }
 }
-/***************************************
-**********功 能： 接受的数据  ******
-**********输入参数： 无  ******
-**********返回 值： TWDR中的数据  ******
-****************************************/
+
+/*******************************************************************************
+* Function:     TWI_GetReceByte()
+* Arguments: 
+* Return:       TWDR
+* Description: Return the received data, to be compatible to "GPIO Mode" of TWI
+*******************************************************************************/
 UINT8 TWI_GetReceByte(void)
 {
     return (TWDR);
@@ -79,16 +91,23 @@ UINT8 TWI_GetReceByte(void)
 **********输入参数： 发送的数据   ******
 **********返回 值： 无   ******
 ****************************************/
+/*******************************************************************************
+* Function:     TWI_SendByte()
+* Arguments:  Data to be sent   
+* Return:       
+* Description: Send out 1 byte
+*******************************************************************************/
 void TWI_SendByte(UINT8 SendByte)
 {
     TWDR = SendByte;
     TWI_Enable_Send();
 }
-/****************************************
-**********功 能： 接收后是否应答  ******
-**********输入参数： 1 应答；0 不应答 ****
-**********返回 值： 无   ******
-****************************************/
+/*******************************************************************************
+* Function:     TWI_RecByteAck()
+* Arguments:  AckFlag
+* Return:
+* Description: 1: send ACK after data received, 0: No ACK after receive data
+*******************************************************************************/
 void TWI_RecByteAck(UINT8 AckFlag)
 {
     if (AckFlag)
@@ -102,10 +121,11 @@ void TWI_RecByteAck(UINT8 AckFlag)
         TWI_ReceNACK();
     }
 }
-/*****************************************************************************
-**********功 能： 主机中断模式发送数据 **************************************
-**********输入参数： DeviceAddr 器件地址；length 数据长度 ；*pData 发送数据 ****
-**********返回 值： 无 **************************************
+/*******************************************************************************
+* Function:     TWI_WriteToDevice()
+* Arguments:  DeviceAddr, length of data,  DataBuffer
+* Return:
+* Description: TWI Master send out data in INTERRUPT MODE.
 *******************************************************************************/
 void TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 length, UINT8 *pData)
 {
@@ -114,9 +134,9 @@ void TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 length, UINT8 *pData)
     TWI_DataLength = length;
     //fill data to Tx buffer;
     Fill_Data(length, pData);
-    //Device write address;
-    IIC_DeviceAddr = (DeviceAddr & 0xFE);
-    //启动传输;
+    //Device write address(High 7 bits);
+    IIC_DeviceAddr = (DeviceAddr & 0xFE);   
+    //Start Sending data
     TWI_StartTransmition();
     //等待写操作完成;
     while (!TWI_Write_Finish)
@@ -131,11 +151,14 @@ void TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 length, UINT8 *pData)
     //关闭中断;
     Disable_Interrupt_TWI();
 }
-/****************************************************
-**********功 能： 将发送的数据填充缓存空间 *********
-**********输入参数： length 数据长度；*pData 数据 ****
-**********返回 值： 无   ******************
-******************************************************/
+
+/*******************************************************************************
+* Function:     Fill_Data()
+* Arguments:  length of data,  Data Buffer
+* Return:
+* Description: Move data to TWI_SendData, why????
+*******************************************************************************/
+
 void Fill_Data(UINT8 length, UINT8 *pData)
 {
     UINT8 i;
@@ -144,39 +167,44 @@ void Fill_Data(UINT8 length, UINT8 *pData)
         TWI_SendData[i] = *(pData + i);
     }
 }
-/****************************************************
-**********功 能： 启动数据传输   ******************
-**********输入参数： 无   ******************
-**********返回 值： 无   ******************
-******************************************************/
+
+/*******************************************************************************
+* Function:     TWI_StartTransmition()
+* Arguments:  
+* Return:
+* Description: Need to write TWINT = 1 to clear TWINT. Then Set TWIE=1 to start TWINT
+*******************************************************************************/
 void TWI_StartTransmition(void)
 {
     //Start transmition;
-    TWI_Start();
+    TWI_Start();    //Start IE, EN, "Start bit", //TODO: might be an issue. Should set TWINT after TWAR/TWSR/TWDR are set
     //enable TWI interrupt;
     Enable_Interrupt_TWI();
+    
+
 }
-/*****************************************************************************
-**********功 能： 主机中断模式读取数据 **************************************
-**********输入参数： DeviceAddr 器件地址；length 数据长度 *********************
-**********返回 值： 无 **************************************
+/*******************************************************************************
+* Function:     TWI_ReadFromDevice()
+* Arguments:  Device Address, Data Length  
+* Return:
+* Description: Read "Length" data from device. TWI Master device read data in INTERRUPT MODE.
 *******************************************************************************/
 void TWI_ReadFromDevice(UINT8 DeviceAddr, UINT8 length)
 {
     Disable_Interrupt_TWI();
-    //要读取的数据的长度;
+    //Data Length;
     TWI_DataLength = length;
-    //读数据地址;
+    //Address;
     IIC_DeviceAddr = (DeviceAddr | 0x01);
-    //启动传输;
-    TWI_StartTransmition();
-    //等待读取完成;
-    while (!TWI_Read_Finish);
-    //清除IIC读标志位;
+    //Start;
+    TWI_StartTransmition();     //Enable Interrupt
+    //Wait for finish reading
+    while (!TWI_Read_Finish);   //Wait for TWI ISR to move data. Might be good to use: while(TWI_Read_Finish>0);
+    //reset flag, repeated
     TWI_Read_Finish = 0;
-    //发送停止条件;
+    //Send "STOP" signal;
     TWI_Stop();
-    //关闭TWI中断;
+    //Disable interrupt;
     Disable_Interrupt_TWI();
 }
 
@@ -184,6 +212,12 @@ void TWI_ReadFromDevice(UINT8 DeviceAddr, UINT8 length)
 /***********************************************************************
 **************中断函数**************************************************
 ************************************************************************/
+/*******************************************************************************
+* Function:     TWI_isr()
+* Arguments:  
+* Return:
+* Description: ISR (interrupt service routine) of TWI
+*******************************************************************************/
 #ifdef __GNUC__
 SIGNAL(TWI_vect)
 #else
@@ -195,93 +229,90 @@ void TWI_isr(void)
 {
     switch (TWI_STATUS)
     {
-        // 主机START信号传输完成;
-    case TWI_START:
-        // 主机重新开始信号传输完成;
-    case TWI_REP_START:
-        //发送IIC器件地址;
-        TWI_SendByte(IIC_DeviceAddr);
-        break;
-        // 使能TWI总线, 使能TWI中断, 发送RESTART信号;
-    case TWI_ARB_LOST:
-        //启动TWI;
-        TWI_Start();
-        break;
-        /************************************************
-        *****主机发送模式,发送数据*************************
-        *************************************************/
-        // 主机发送-->从机地址及读写标志传输完成并收到ACK信号;
-    case TWI_MT_SLA_W_ACK:
-        // 主机发送-->数据传输完成并收到ACK信号;
-    case TWI_MT_DATA_ACK:
-        if (TWI_Index < TWI_DataLength)
-        {
-            //发送数据;
-            TWI_SendByte(TWI_SendData[TWI_Index]);
-            //加载下一个数据;
+        case TWI_START:     //STA is sent out
+        case TWI_REP_START:     //Repeated STA is sent out
+            TWI_SendByte(IIC_DeviceAddr);   //Send slave device address, ??? Need to check if TWIE ==1
+            break;
+            // 使能TWI总线, 使能TWI中断, 发送RESTART信号;
+        case TWI_ARB_LOST:
+            //启动TWI;
+            TWI_Start();
+            break;
+            /************************************************
+            *****主机发送模式,发送数据*************************
+            *************************************************/
+            // 主机发送-->从机地址及读写标志传输完成并收到ACK信号;
+        case TWI_MT_SLA_W_ACK:
+            // 主机发送-->数据传输完成并收到ACK信号;
+        case TWI_MT_DATA_ACK:
+            if (TWI_Index < TWI_DataLength)
+            {
+                //发送数据;
+                TWI_SendByte(TWI_SendData[TWI_Index]);
+                //加载下一个数据;
+                TWI_Index++;
+            }
+            else
+            {
+                //清楚数组指向,为接受准备;
+                TWI_Index = 0;
+                TWI_Write_Finish = 1;
+            }
+            break;
+            /************************************************
+            *****主机接收模式,接收数据*************************
+            *************************************************/
+            // 主机接收模式下-->发送完成SLA+R 并收到ACK信号;
+        case TWI_MR_SLA_R_ACK:
+            if (TWI_Index < (TWI_DataLength - 1))
+            {
+                //接收到数据后应答;
+                TWI_RecByteAck(1);
+            }
+            else
+            {
+                //接收到数据后不应答;
+                TWI_RecByteAck(0);
+            }
+            break;
+            // 主机接收模式下-->收到一个字节数据并发送完ACK信号;
+        case TWI_MR_DATA_ACK:
+            TWI_ReceData[TWI_Index] = TWI_GetReceByte();
             TWI_Index++;
-        }
-        else
-        {
-            //清楚数组指向,为接受准备;
+            break;
+            // 主机接收模式下收到数据，发送了NACK信号;
+        case TWI_MR_DATA_NACK:
+            //存储最后一组数据;
+            TWI_ReceData[TWI_Index] = TWI_GetReceByte();
+            //清楚数组指向,为下一组数据准备;
             TWI_Index = 0;
-            TWI_Write_Finish = 1;
-        }
-        break;
-        /************************************************
-        *****主机接收模式,接收数据*************************
-        *************************************************/
-        // 主机接收模式下-->发送完成SLA+R 并收到ACK信号;
-    case TWI_MR_SLA_R_ACK:
-        if (TWI_Index < (TWI_DataLength - 1))
-        {
-            //接收到数据后应答;
-            TWI_RecByteAck(1);
-        }
-        else
-        {
-            //接收到数据后不应答;
-            TWI_RecByteAck(0);
-        }
-        break;
-        // 主机接收模式下-->收到一个字节数据并发送完ACK信号;
-    case TWI_MR_DATA_ACK:
-        TWI_ReceData[TWI_Index] = TWI_GetReceByte();
-        TWI_Index++;
-        break;
-        // 主机接收模式下收到数据，发送了NACK信号;
-    case TWI_MR_DATA_NACK:
-        //存储最后一组数据;
-        TWI_ReceData[TWI_Index] = TWI_GetReceByte();
-        //清楚数组指向,为下一组数据准备;
-        TWI_Index = 0;
-        //接收完成标志;
-        TWI_Read_Finish = 1;
-        //停止通信;
-        TWI_Stop();
-        break;
-        /************************************************
-          *****主机接收和发送模式,其他错误状态*************************
-          *************************************************/
-          // 主机发送模式发送从机地址后无应答;
-    case TWI_MR_SLA_R_NACK:
-        // 主机发送模式下数据传输完成无应答;
-    case TWI_MT_DATA_NACK:
-        // 主机接收模式发送从机地址后无应答;
-    case TWI_MT_SLA_W_NACK:
-        //释放总线;
-        TWI_Stop();
-        break;
+            //接收完成标志;
+            TWI_Read_Finish = 1;
+            //停止通信;
+            TWI_Stop();
+            break;
+            /************************************************
+              *****主机接收和发送模式,其他错误状态*************************
+              *************************************************/
+              // 主机发送模式发送从机地址后无应答;
+        case TWI_MR_SLA_R_NACK:
+            // 主机发送模式下数据传输完成无应答;
+        case TWI_MT_DATA_NACK:
+            // 主机接收模式发送从机地址后无应答;
+        case TWI_MT_SLA_W_NACK:
+            //释放总线;
+            TWI_Stop();
+            break;
 
-        // 总线错误;
-    case TWI_BUS_ERROR:
-        TWI_Stop();
-        break;
-    default:
-        TWCR = (1 << TWEN) |                          // 使能TWI总线，释放TWI端口;
-            (0 << TWIE) | (0 << TWINT) |                      // 禁止中断;
-            (0 << TWEA) | (0 << TWSTA) | (0 << TWSTO) |           //
-            (0 << TWWC); //
+            // 总线错误;
+        case TWI_BUS_ERROR:
+            TWI_Stop();
+            break;
+        default:
+            TWCR = (1 << TWEN) |                          // 使能TWI总线，释放TWI端口;
+                (0 << TWIE) | (0 << TWINT) |                      // 禁止中断;
+                (0 << TWEA) | (0 << TWSTA) | (0 << TWSTO) |           //
+                (0 << TWWC); //
 
 
     }

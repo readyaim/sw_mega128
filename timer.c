@@ -40,10 +40,10 @@ void timer0_ovf_isr(void)
 #endif // TIMER0_ADC
 
 /*******************************************************************************
-* 函数名称: timer0_comp_isr()
-* 入口参数:
-* 出口参数:
-* 功能描述: timer0比较器中断服务子程序
+* Function:  timer0_comp_isr()
+* Arguments: 
+* Return: 
+* Description:  timer0比较器中断服务子程序
 *******************************************************************************/
 #pragma interrupt_handler timer0_comp_isr:iv_TIMER0_COMPA
 void timer0_comp_isr(void)
@@ -78,10 +78,10 @@ void init_devices_timer0(void)
     timer0_init();
 }
 /*******************************************************************************
-* 函数名称: init_timer1()
-* 入口参数:
-* 出口参数:
-* 功能描述: timer1初始化函数
+* Function:  init_timer1()
+* Arguments: 
+* Return: 
+* Description:  timer1初始化函数
 *******************************************************************************/
 void init_timer1(void)
 {
@@ -90,10 +90,10 @@ void init_timer1(void)
     TCCR1B = 0X03;//CS02 CS01 CS0 0000 0011======64分频
 }
 /*******************************************************************************
-* 函数名称: timer1_ovf_isr()
-* 入口参数:
-* 出口参数:
-* 功能描述: timer1中断服务函数
+* Function:  timer1_ovf_isr()
+* Arguments: 
+* Return: 
+* Description:  timer1中断服务函数
 *******************************************************************************/
 #pragma interrupt_handler timer1_ovf_isr:iv_TIM1_OVF
 void timer1_ovf_isr(void)
@@ -103,10 +103,10 @@ void timer1_ovf_isr(void)
     beep();
 }
 /*******************************************************************************
-* 函数名称: timer1_ovEnable()
-* 入口参数:
-* 出口参数:
-* 功能描述: timer1溢出中断使能
+* Function:  timer1_ovEnable()
+* Arguments: 
+* Return: 
+* Description:  timer1溢出中断使能
 *******************************************************************************/
 void timer1_ovEnable(void)
 {
