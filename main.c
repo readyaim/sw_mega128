@@ -23,6 +23,7 @@ extern void main_adc1(void);
 extern void main_watchdog(void);
 extern void main_uart0(void);
 extern void main_processCmd(void);
+extern void main_twi(void);
 
 UINT32 SystemTickCount;
 struct Fifo CommandFifo;
@@ -40,8 +41,8 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 
 void main(void)
 {
-    main_uart0();
-    
+    //main_uart0();
+    main_twi();
     main_processCmd();
     
 

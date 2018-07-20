@@ -585,33 +585,30 @@ void IIC_Start(void)
     SCL_LOW;
 
 }
-/*****************************************************************************
-**********功 能： 模拟IIC停止  ********************************************
-**********输入参数：  无  ********************************************
-**********返回 值： 无  ********************************************
-*******************************************************************************/
 /*******************************************************************************
-* Function:     IIC_Start()
+* Function:     IIC_Stop()
 * Arguments:
 * Return:
-* Description: GPIO Simulation IIC Mode. IIC STA
+* Description: GPIO Simulation IIC Mode. IIC STO
 *******************************************************************************/
 void IIC_Stop(void)
 {
-    //设置为输出模式;
     SDA_OUT;
     SCL_OUT;
-    //钳住I2C总线，避免Start和Stop信号;
+    //Set SCL Low to hold the bus
     SCL_LOW;
-    //发送结束条件的数据信号;
+    //STO
     SDA_LOW;
     SCL_HIGH;
     SDA_HIGH;
 }
-/*****************************************************************************
-**********功 能： 读取应答信号  ********************************************
-**********输入参数：  无         ****************************************
-**********返回 值： SDA_Read 1不应答，SDA_Read 0应答 **********************************
+
+/*******************************************************************************
+* Function:     IIC_ReadAck()
+* Arguments:
+* Return:       1: NACK, 0:ACK
+* Description: GPIO Simulation IIC Mode. IIC Read ACK. 
+                    If SDA is High, return NACK. If SDK keeps low for enough long time, return ACK
 *******************************************************************************/
 UINT8 IIC_ReadAck(void)
 {
@@ -619,7 +616,7 @@ UINT8 IIC_ReadAck(void)
     UINT8 i = 0;
     SCL_OUT;
     SCL_LOW;
-    //设置SDA为输入;
+    //set SDA to input
     SDA_IN;
     SCL_HIGH;
     for (i = 255; i > 0; i--)
@@ -631,15 +628,17 @@ UINT8 IIC_ReadAck(void)
             return ACK_NACK;
         }
     }
+    //SDA_IN keeps LOW for 256/CPU_CLK s
     SCL_LOW;
     return ACK_NACK = 0;
 }
 
 
-/*****************************************************************************
-**********功 能： 发送数据  ********************************************
-**********输入参数： 要发送的数据  ****************************************
-**********返回 值： 无  **********************************
+/*******************************************************************************
+* Function:     IIC_SendByte()
+* Arguments:  data
+* Return:       1: NACK, 0:ACK
+* Description: GPIO Simulation IIC Mode. Send 1 byte out
 *******************************************************************************/
 void IIC_SendByte(UINT8 Wdata)
 {
@@ -661,10 +660,13 @@ void IIC_SendByte(UINT8 Wdata)
         SCL_HIGH;
     }
 }
-/*****************************************************************************
-**********功 能： 发送应答    *******************************************
-**********输入参数： 1不应答，0应答 ********************************************
-**********返回 值： 无 ******************************************
+
+/*******************************************************************************
+* Function:     IIC_Send_ACK_Or_NACK()
+* Arguments:  ACK_Or_NACK
+* Return:       
+* Description: GPIO Simulation IIC Mode. 
+                     if ACK_Or_NACK==1 NACK, else ACK
 *******************************************************************************/
 void IIC_Send_ACK_Or_NACK(UINT8 ACK_Or_NACK)
 {
@@ -673,12 +675,12 @@ void IIC_Send_ACK_Or_NACK(UINT8 ACK_Or_NACK)
     SCL_LOW;
     if (ACK_Or_NACK)
     {
-        //无应答信号;
+        //Send NACK
         SDA_HIGH;
     }
     else
     {
-        //应答信号;
+        //send ACK
         SDA_LOW;
     }
     SCL_HIGH;
@@ -807,7 +809,7 @@ UINT8 IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
     IIC_SendByte(DeviceAddr | 0x01);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //1, NACK to SLA+R
         IIC_Stop();
         return 0;
     }
@@ -994,4 +996,21 @@ void IIC_TWI_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
     {
         IIC_ReadFromDeviceByAddr(DeviceAddr, DataAddr, pData, DataLength);
     }
+}
+
+
+void main_twi(void)
+{
+    UINT8 pWData[4] = { 1,2,3,4 };
+    UINT8 pRData[2];
+    UINT8 deviceAddr = 0x13;
+    UINT8 length = 4;
+    TWI_Init();
+    //TWI_WriteToDevice(deviceAddr, length, pWData);
+    //TWI_ReadFromDevice(0x23, 2);
+    IIC_WriteToDevice(deviceAddr, pWData, length);
+    
+
+    //while (1);
+
 }

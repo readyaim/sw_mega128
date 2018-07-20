@@ -34,7 +34,12 @@
 9、取得git remote分支
       git checkout --track origin/branchname1
       git fetch
-           
+10、当本地有branchname1时，如何取得remote branchname1
+      (git pull)
+      git fetch
+      git branch -a
+      git checkout branchname1
+      git pull
 -------------------------
 #关于从remote取分支
 git branch -a               //check remote branch

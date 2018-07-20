@@ -1,19 +1,17 @@
-# ignore all files
+## ignore all files
 *
 ## ignore all folders
 !/**/
-# include all *.c files in root and subfolders
+## include all *.c files in root and subfolders
 !*.c
 !*.h
-!*.hex
+#!*.hex
 !git_readme.txt
 #exclude folders
 /example/
 /vs2017/
-# include output/*.hex
-#!sw/output/*.hex
-# include .gitignore
+## include .gitignore
 !.gitignore
-# include *.py in all folders(subfolders)
-#!sw
+## include *.py in all folders(subfolders)
+#!*.py
 #!/sw/*.c
