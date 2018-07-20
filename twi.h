@@ -65,15 +65,15 @@
 #define TWI_ERROR_NODEV                 0x01
 
 
-//使能TWI中断;
+//enable interrupt
 #define Enable_Interrupt_TWI() TWCR|=(1<<TWIE)
-//不使能TWI中断;
+//Disable interrupt
 #define Disable_Interrupt_TWI() TWCR&=~(1<<TWIE)
-//清零TWINT、清零start状态、使能TWI.发出START 信号;
+//Send STO, clear TWINT, enable TWI;
 #define TWI_Start() (TWCR=TWI_TWCR_STATE|(1<<TWINT)|(1<<TWSTA)|(1<<TWEN))
-//发送停止条件;
+//send STO
 #define TWI_Stop() (TWCR=TWI_TWCR_STATE|(1<<TWINT)|(1<<TWEA)|(1<<TWSTO))
-//等待TWI 总线操作完成;
+//Wait for TWI interrupt;
 #define TWI_Wait() {while (!(TWCR & (1<<TWINT)));}
 //启动发送;
 #define TWI_Enable_Send() TWCR=(TWI_TWCR_STATE|(1<<TWINT))
@@ -121,8 +121,8 @@ UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata);
 #define TWI_PORT_DDR DDRD
 
 
-#define SDA_OUT DDRD|=(1<<SDA_Pin)
-#define SDA_IN DDRD&=~(1<<SDA_Pin)
+#define SDA_OUT TWI_PORT_DDR|=(1<<SDA_Pin)
+#define SDA_IN TWI_PORT_DDR&=~(1<<SDA_Pin)
 
 
 #define SDA_LOW TWI_PORT&=~(1<<SDA_Pin);delay_us(IIC_DELAY_TIME)

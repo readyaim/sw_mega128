@@ -20,16 +20,21 @@
       git branch -d local_branch
 
 6、删除远程分支remote_branch
-     git push origin  :remote_branch
-     git branch -m | -M oldbranch newbranch 重命名分支，如果newbranch名字分支已经存在，则需要使用-M强制重命名，否则，使用-m进行重命名。
-   git branch -d | -D branchname 删除branchname分支
-   git branch -d -r branchname 删除远程branchname分支
+    git push origin  :remote_branch
+    git branch -m | -M oldbranch newbranch 重命名分支，如果newbranch名字分支已经存在，则需要使用-M强制重命名，否则，使用-m进行重命名。
+    git branch -d | -D branchname 删除branchname分支
+    git branch -d -r branchname 删除远程branchname分支
 
 7、查看本地分支
       git branch
 
 8、查看远程和本地分支
       git branch -a
+      
+9、取得git remote分支
+      git checkout --track origin/branchname1
+      git fetch
+           
 -------------------------
 #关于从remote取分支
 git branch -a               //check remote branch

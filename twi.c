@@ -218,104 +218,98 @@ void TWI_isr(void)
         case TWI_REP_START:     //Repeated STA is sent out
             TWI_SendByte(IIC_DeviceAddr);   //Send slave device address, ??? Need to check if TWIE ==1
             break;
-            // 使能TWI总线, 使能TWI中断, 发送RESTART信号;
-        case TWI_ARB_LOST:  
-            //启动TWI;
+        case TWI_ARB_LOST:      //Arbitration failed, send START when BUS is available
             TWI_Start();
-            break;
-            /************************************************
-            *****主机发送模式,发送数据*************************
-            *************************************************/
-            // 主机发送-->从机地址及读写标志传输完成并收到ACK信号;
-        case TWI_MT_SLA_W_ACK:
-            // 主机发送-->数据传输完成并收到ACK信号;
+            break;  //TODO: ERROR() 
+         //Master send data, after STA->ADDR->W/R MODE->ACK
+        case TWI_MT_SLA_W_ACK:  
+        //Master send next data, after ACK
         case TWI_MT_DATA_ACK:
-            if (TWI_Index < TWI_DataLength)
+            if (TWI_Index < TWI_DataLength) //data finish?
             {
-                //发送数据;
+                //send 1 byte
                 TWI_SendByte(TWI_SendData[TWI_Index]);
-                //加载下一个数据;
                 TWI_Index++;
             }
             else
             {
-                //清楚数组指向,为接受准备;
                 TWI_Index = 0;
                 TWI_Write_Finish = 1;
             }
-            break;
-            /************************************************
-            *****主机接收模式,接收数据*************************
-            *************************************************/
-            // 主机接收模式下-->发送完成SLA+R 并收到ACK信号;
-        case TWI_MR_SLA_R_ACK:
+            break;  //break and wait for TWINT on 1 byte transmission finished
+            
+        /**********************MR MODE: Master RECEIVE MODE************************/
+
+        //After SLA+R->ACK
+        case TWI_MR_SLA_R_ACK: 
             if (TWI_Index < (TWI_DataLength - 1))
             {
-                //接收到数据后应答;
+                //ACK, more data to recieve
                 TWI_RecByteAck(1);
             }
             else
             {
-                //接收到数据后不应答;
+                //NACK, no more data
                 TWI_RecByteAck(0);
             }
             break;
-            // 主机接收模式下-->收到一个字节数据并发送完ACK信号;
+        //Savd the TWDR(data) to buffer and send ACK/NACK
         case TWI_MR_DATA_ACK:
             TWI_ReceData[TWI_Index] = TWI_GetReceByte();
             TWI_Index++;
-            break;
-            // 主机接收模式下收到数据，发送了NACK信号;
+            //add by sz, Send ACK if index==length, else NACK
+            if (TWI_Index < (TWI_DataLength - 1))
+            {
+                //ACK, more data to recieve
+                TWI_RecByteAck(1);
+            }
+            else
+            {
+                //NACK, no more data
+                TWI_RecByteAck(0);
+            }
+            //end
+            break;  //return NACK???
+        //MR Mode, NACK is sent. Save last byte data
         case TWI_MR_DATA_NACK:
-            //存储最后一组数据;
             TWI_ReceData[TWI_Index] = TWI_GetReceByte();
-            //清楚数组指向,为下一组数据准备;
+            //reset index
             TWI_Index = 0;
-            //接收完成标志;
+            //update flag
             TWI_Read_Finish = 1;
-            //停止通信;
-            TWI_Stop();
-            break;
-            /************************************************
-              *****主机接收和发送模式,其他错误状态*************************
-              *************************************************/
-              // 主机发送模式发送从机地址后无应答;
-        case TWI_MR_SLA_R_NACK:
-            // 主机发送模式下数据传输完成无应答;
-        case TWI_MT_DATA_NACK:
-            // 主机接收模式发送从机地址后无应答;
-        case TWI_MT_SLA_W_NACK:
-            //释放总线;
+            //Send STO
             TWI_Stop();
             break;
 
-            // 总线错误;
-        case TWI_BUS_ERROR:
+        /*MT/MR Mode, Error status*/
+        case TWI_MR_SLA_R_NACK:         //NACK to SLA+R in MR mode
+        case TWI_MT_DATA_NACK:          //NACK to DATA in MT mode
+        case TWI_MT_SLA_W_NACK:         //NACK to SLA+W in MT mode
+            //STO->STA
+            TWI_Stop();
+            break;
+        case TWI_BUS_ERROR:             //BUS ERROR
             TWI_Stop();
             break;
         default:
-            TWCR = (1 << TWEN) |                          // 使能TWI总线，释放TWI端口;
-                (0 << TWIE) | (0 << TWINT) |                      // 禁止中断;
-                (0 << TWEA) | (0 << TWSTA) | (0 << TWSTO) |           //
+            //enable TWI BUS
+            TWCR = (1 << TWEN) |
+                (0 << TWIE) | (0 << TWINT) |
+                (0 << TWEA) | (0 << TWSTA) | (0 << TWSTO) |
                 (0 << TWWC); //
-
-
     }
 }
+/****************INTERRUPT END***********************/
 
 
-/******************************中断方式***********************/
+/****************INQUIRY MODE START******************/
 
 
-/********************************************************************************
-***********************查询方式*************************************************
-*********************************************************************************/
-
-
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 0 写入失败，1 写入成功  **********************************
+/*******************************************************************************
+* Function:     TWI_IIC_WriteToDevice()
+* Arguments:  DeviceAddr, databuffer, datalength  
+* Return:       1: success, 0: fail
+* Description: Inquiry Mode, Write data to device 
 *******************************************************************************/
 UINT8 TWI_IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -327,23 +321,23 @@ UINT8 TWI_IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
         TWI_Stop();
         return 0;
     }
-    //发送器件地址;
+    //SLA+W
     TWI_SendByte(DeviceAddr & 0xFE);
     TWI_Wait();
     if (TWI_STATUS != TWI_MT_SLA_W_ACK)
     {
-        //没有应答结束通信;
+        //NACK to SLA+W
         TWI_Stop();
         return 0;
     }
-    //发送数据;
+    //Send data
     for (i = 0; i < DataLength; i++)
     {
         TWI_SendByte(*pData);
         TWI_Wait();
         if (TWI_STATUS != TWI_MT_DATA_ACK)
         {
-            //没有应答结束通信;
+            //receive NACK from SLAVE to MT DATA
             TWI_Stop();
             return 0;
         }
@@ -352,11 +346,11 @@ UINT8 TWI_IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
     TWI_Stop();
     return 1;
 }
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，DataAddr 数据存储的地址 **************
-******************   pdata 数据，DataLength 数据长度  *************************
-**********返回 值： 0 写入失败，1 写入成功  **********************************
+/*******************************************************************************
+* Function:     TWI_IIC_WriteToDeviceByAddr()
+* Arguments:  DeviceAddr, dataAddr, databuffer, datalength
+* Return:       1: success, 0: fail
+* Description: Inquiry Mode, Write data to device by Addr
 *******************************************************************************/
 UINT8 TWI_IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -368,7 +362,7 @@ UINT8 TWI_IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
         TWI_Stop();
         return 0;
     }
-    //发送器件地址;
+    //SLA+W
     TWI_SendByte(DeviceAddr & 0xFE);
     TWI_Wait();
     if (TWI_STATUS != TWI_MT_SLA_W_ACK)
@@ -376,7 +370,7 @@ UINT8 TWI_IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
         TWI_Stop();
         return 0;
     }
-    //发送数据地址;
+    //DataAddr
     TWI_SendByte(DataAddr);
     TWI_Wait();
     if (TWI_STATUS != TWI_MT_DATA_ACK)
@@ -384,7 +378,7 @@ UINT8 TWI_IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
         TWI_Stop();
         return 0;
     }
-    //发送数据;
+    //Send Data
     for (i = 0; i < DataLength; i++)
     {
         TWI_SendByte(*pData);
@@ -399,15 +393,16 @@ UINT8 TWI_IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
     TWI_Stop();
     return 1;
 }
-/*****************************************************************************
-**********功 能： 从设备读出数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 0 读出失败，1 读出成功  **********************************
+
+/*******************************************************************************
+* Function:     TWI_IIC_ReadFromDevice()
+* Arguments:  DeviceAddr, databuffer, datalength
+* Return:       1: success, 0: fail
+* Description: Inquiry mode. Read data to device by Addr
 *******************************************************************************/
 UINT8 TWI_IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
     UINT8 i = 0;
-    //UINT8 ACK_NACK=0;
     TWI_Start();
     TWI_Wait();
     if (TWI_STATUS != TWI_START)
@@ -415,12 +410,12 @@ UINT8 TWI_IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
         TWI_Stop();
         return 0;
     }
-    //发送器件地址;
+    //SLA+R, 0x01 means read, 0x00 means write
     TWI_SendByte(DeviceAddr | 0x01);
     TWI_Wait();
     if (TWI_STATUS != TWI_MR_SLA_R_ACK)
     {
-        //没有应答结束通信;
+        //NACK to SLA+R
         TWI_Stop();
         return 0;
     }
@@ -431,7 +426,7 @@ UINT8 TWI_IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
             return 0;
         }
     }
-    //读取数据时，最后1字节的数据读取完成以后发送NAK而不是ACK
+    //Send NACK after the last byte data
     if (TWI_ReciveDATA_NACK(pData + i) == 0)
     {
         return 0;
@@ -439,11 +434,12 @@ UINT8 TWI_IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
     TWI_Stop();
     return 1;
 }
-/*****************************************************************************
-**********功 能： 从设备读出数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，DataAddr 数据读出的地址 **************
-******************   pdata 数据，DataLength 数据长度  *************************
-**********返回 值： 0 读出失败，1 读出成功  **********************************
+
+/*******************************************************************************
+* Function:     TWI_IIC_ReadFromDeviceByAddr()
+* Arguments:  DeviceAddr, Data Addr, databuffer, datalength
+* Return:       1: success, 0: fail
+* Description: Inquiry mode. Write data to device by Addr
 *******************************************************************************/
 UINT8 TWI_IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -456,21 +452,21 @@ UINT8 TWI_IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pDat
         TWI_Stop();
         return 0;
     }
-    //发送器件地址;
-    TWI_SendByte(DeviceAddr & 0xFE);
+    //Device Addr
+    TWI_SendByte(DeviceAddr & 0xFE);    //TODO: 0xFE or 0x01????
     TWI_Wait();
     if (TWI_STATUS != TWI_MT_SLA_W_ACK)
     {
-        //没有应答结束通信;
+        //Got NACK for SLA+R
         TWI_Stop();
         return 0;
     }
-    //发送数据地址;
+    //Send Data
     TWI_SendByte(DataAddr);
     TWI_Wait();
     if (TWI_STATUS != TWI_MT_DATA_ACK)
     {
-        //没有应答结束通信;
+        //NACK for DATA
         TWI_Stop();
         return 0;
     }
@@ -485,7 +481,7 @@ UINT8 TWI_IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pDat
     TWI_Wait();
     if (TWI_STATUS != TWI_MR_SLA_R_ACK)
     {
-        //没有应答结束通信;
+        //NACK to SLA+R
         TWI_Stop();
         return 0;
     }
@@ -497,7 +493,7 @@ UINT8 TWI_IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pDat
             return 0;
         }
     }
-    //读取数据时，最后1字节的数据读取完成以后发送NAK而不是ACK
+    //In MR mdoe, send NACK for last byte
     if (TWI_ReciveDATA_NACK(pData + i) == 0)
     {
         return 0;
@@ -505,31 +501,34 @@ UINT8 TWI_IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pDat
     TWI_Stop();
     return 1;
 }
-/*********************************************************************************
-*****功能：接收数据，不发应答信号***************************************************
-*****输入参数：存储接收到的数据buffer***********************************************
-****输出参数：0：接收失败；1接收成功************************************************
-*********************************************************************************/
+/*******************************************************************************
+* Function:     TWI_ReciveDATA_NACK()
+* Arguments:  databuffer
+* Return:       1: success, 0: fail
+* Description: Inquiry mode. Receive data and feed back NACK. For last byte
+*******************************************************************************/
 UINT8  TWI_ReciveDATA_NACK(UINT8 *pdata)
 {
-    TWI_ReceNACK();
-    TWI_Wait();
-    if (TWI_STATUS != TWI_MR_DATA_NACK)
+    TWI_ReceNACK(); //Set NACK Mode and INT to start receiving data
+    TWI_Wait(); //wait for data receiving finished
+    if (TWI_STATUS != TWI_MR_DATA_NACK) //check status
     {
         return 0;
     }
-    *pdata = TWI_GetReceByte();
+    *pdata = TWI_GetReceByte(); //save data
     return 1;
 }
-/******************************************************************************
-*****功能：接收数据，发应答信号***************************************************
-*****输入参数：存储接收到的数据buffer*********************************************
-****输出参数：0：接收失败；1接收成功***********************************************
+
+/*******************************************************************************
+* Function:     TWI_ReciveDATA_ACK()
+* Arguments:  databuffer
+* Return:       1: success, 0: fail
+* Description: Inquiry mode. Receive data and feed back ACK. Not for the last byte
 *******************************************************************************/
 UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata)
 {
-    TWI_ReceACK();
-    TWI_Wait();
+    TWI_ReceACK();  //Set NACK Mode and INT to start receiving data
+    TWI_Wait();     //wait for data receiving finished
     if (TWI_STATUS != TWI_MR_DATA_ACK)
     {
         return 0;
@@ -537,25 +536,24 @@ UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata)
     *pdata = TWI_GetReceByte();
     return 1;
 }
-/********************************************************************************
-***********************模拟IIC SDA--PC4   SCL--PC5********************************
-*********************************************************************************/
-/************注意：模拟IIC读和写数据之间必须有5ms的延时时****************************/
 
 
 
+/**************GPIO Simulation Mode IIC SDA--PC4   SCL--PC5***************************
+**************Attention：MUST delay 5ms between IIC read and write     *****************/
 
-/*****************************************************************************
-**********功 能： 模拟IIC初始化 ********************************************
-**********输入参数：  无  ********************************************
-**********返回 值： 无  ********************************************
+/*******************************************************************************
+* Function:     IIC_Init()
+* Arguments:  
+* Return:       
+* Description: GPIO Simulation IIC Mode. GPIO initiation for IIC
 *******************************************************************************/
 void IIC_Init(void)
 {
-    //设置为输出模式;
+    //Set Port to OUTPUT
     SDA_OUT;
     SCL_OUT;
-    //设置输出为高;
+    //output high
     SDA_HIGH;
     SCL_HIGH;
 }
@@ -566,19 +564,24 @@ void IIC_Init(void)
 **********输入参数：  无  ********************************************
 **********返回 值： 无  ********************************************
 *******************************************************************************/
+/*******************************************************************************
+* Function:     IIC_Start()
+* Arguments:
+* Return:
+* Description: GPIO Simulation IIC Mode. IIC STA
+*******************************************************************************/
 void IIC_Start(void)
 {
-    //设置为输出模式;
     SDA_OUT;
     SCL_OUT;
-    //钳住I2C总线，避免Start和Stop信号;
+    //Set SCL Low to hold the bus
     SCL_LOW;
-    //发送起始条件的数据信号;
+    //Init
     SDA_HIGH;
     SCL_HIGH;
-    //发送起始信号;
+    //Send STA
     SDA_LOW;
-    //钳住I2C总线，准备发送或接收数据
+    //Set SCL Low to hold the bus
     SCL_LOW;
 
 }
@@ -586,6 +589,12 @@ void IIC_Start(void)
 **********功 能： 模拟IIC停止  ********************************************
 **********输入参数：  无  ********************************************
 **********返回 值： 无  ********************************************
+*******************************************************************************/
+/*******************************************************************************
+* Function:     IIC_Start()
+* Arguments:
+* Return:
+* Description: GPIO Simulation IIC Mode. IIC STA
 *******************************************************************************/
 void IIC_Stop(void)
 {
