@@ -687,11 +687,11 @@ void IIC_Send_ACK_Or_NACK(UINT8 ACK_Or_NACK)
     SCL_LOW;
 }
 
-
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 0 写入失败，1 写入成功  **********************************
+/*******************************************************************************
+* Function:     IIC_WriteToDevice()
+* Arguments:  DeviceAddr, pData, Length
+* Return:        0: write fail, 1: write success
+* Description: GPIO Simulation IIC Mode. Write data to device
 *******************************************************************************/
 UINT8 IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -700,17 +700,17 @@ UINT8 IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
     IIC_SendByte(DeviceAddr & 0xFE);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK to SLA+W
         IIC_Stop();
         return 0;
     }
     for (i = 0; i < DataLength; i++)
     {
-        //发送数据;
+        //Send data
         IIC_SendByte(*pData);
         if (IIC_ReadAck())
         {
-            //没有应答，结束通信;
+            //NACK to data
             IIC_Stop();
             return 0;
         }
@@ -721,40 +721,41 @@ UINT8 IIC_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 }
 
 
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，DataAddr 数据存储的地址 **************
-******************   pdata 数据，DataLength 数据长度  *************************
-**********返回 值： 0 写入失败，1 写入成功  **********************************
+
+/*******************************************************************************
+* Function:     IIC_WriteToDeviceByAddr()
+* Arguments:  DeviceAddr, DataAddr, pData, Length
+* Return:        0: write fail, 1: write success
+* Description: GPIO Simulation IIC Mode. Write data to device with dataAddr
 *******************************************************************************/
 UINT8 IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
     UINT8 i = 0;
-    //启动总线;
+    //STA
     IIC_Start();
-    //发送器件地址;
+    //SLA+W
     IIC_SendByte(DeviceAddr);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK to SLA+W
         IIC_Stop();
         return 0;
     }
-    //发送数据地址;
+    //send Data Addr
     IIC_SendByte(DataAddr);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK to DataAddr
         IIC_Stop();
         return 0;
     }
     for (i = 0; i < DataLength; i++)
     {
-        //发送数据;
+        //Send data
         IIC_SendByte(*pData);
         if (IIC_ReadAck())
         {
-            //没有应答，结束通信;
+            //NACK to data
             IIC_Stop();
             return 0;
         }
@@ -763,26 +764,28 @@ UINT8 IIC_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UI
     IIC_Stop();
     return 1;
 }
-/*****************************************************************************
-**********功 能： 接收数据函数 ******************************************
-**********输入参数： 无 ******************************************
-**********返回 值： 接收到的数据 ******************************************
+
+/*******************************************************************************
+* Function:     IIC_ReceiveByte()
+* Arguments:  
+* Return:        received 1 byte data
+* Description: GPIO Simulation IIC Mode. receive 1 byte
+* TODO: no ACK to SLAVE???
 *******************************************************************************/
 UINT8 IIC_ReceiveByte(void)
 {
     UINT8 Bitcnt = 0;
     UINT8 RevData = 0;
     SCL_OUT;
-    //将SDA设置为输入;
+    //Set SDA as input
     SDA_IN;
     //SDA_LOW;
     for (Bitcnt = 0; Bitcnt < 8; Bitcnt++)
     {
-        //置时钟线为低，准备接收数据位;
+        //Prepare to receive dta
         SCL_LOW;
-        //上拉使;
+        //release SDA
         SDA_HIGH;
-        //置时钟线为高使数据线上数据有效;
         SCL_HIGH;
         RevData = RevData << 1;
         if (SDA_Read)
@@ -793,13 +796,16 @@ UINT8 IIC_ReceiveByte(void)
         {
             RevData += 0;
         }
+        //TODO: Should have ACK next...
     }
     return RevData;
 }
-/*****************************************************************************
-**********功 能： 从设备读出数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 0 读出失败，1 读出成功  **********************************
+
+/*******************************************************************************
+* Function:     IIC_ReadFromDevice()
+* Arguments:  DeviceAddr, pData, Length
+* Return:        0: read fail, 1: read success
+* Description: GPIO Simulation IIC Mode. Read data from slave
 *******************************************************************************/
 UINT8 IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -815,7 +821,7 @@ UINT8 IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
     }
     for (i = 0; i < DataLength; i++)
     {
-        //接收的数据;
+        //receive data
         *pData = IIC_ReceiveByte();
         if (i == (DataLength - 1))
         {
@@ -826,17 +832,17 @@ UINT8 IIC_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
             pData++;
             ACK_NACK = 0;
         }
-        //发送应答或不应答信号;
+        //send ACK or NACK
         IIC_Send_ACK_Or_NACK(ACK_NACK);
     }
     IIC_Stop();
     return 1;
 }
-/*****************************************************************************
-**********功 能： 从设备读出数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，DataAddr 数据读出的地址 **************
-******************   pdata 数据，DataLength 数据长度  *************************
-**********返回 值： 0 读出失败，1 读出成功  **********************************
+/*******************************************************************************
+* Function:     IIC_ReadFromDeviceByAddr()
+* Arguments:  DeviceAddr, DataAddr, pData, Length
+* Return:        0: read fail, 1: read success
+* Description: GPIO Simulation IIC Mode. Read data from slave with data addr
 *******************************************************************************/
 UINT8 IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -846,7 +852,7 @@ UINT8 IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, U
     IIC_SendByte(DeviceAddr & 0xFE);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK to SLA+W
         IIC_Stop();
         return 0;
     }
@@ -854,7 +860,7 @@ UINT8 IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, U
     IIC_SendByte(DataAddr);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK TO data
         IIC_Stop();
         return 0;
     }
@@ -863,14 +869,14 @@ UINT8 IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, U
     IIC_SendByte(DeviceAddr | 0x01);
     if (IIC_ReadAck())
     {
-        //没有应答，结束通信;
+        //NACK to DataAddr
         IIC_Stop();
         return 0;
     }
 
     for (i = 0; i < DataLength; i++)
     {
-        //接收的数据;
+        //receive data
         *pData = IIC_ReceiveByte();
         if (i == (DataLength - 1))
         {
@@ -881,23 +887,20 @@ UINT8 IIC_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, U
             pData++;
             ACK_NACK = 0;
         }
-        //发送应答h或不应答信号;
+        //ACK or NACK(last data)
         IIC_Send_ACK_Or_NACK(ACK_NACK);
     }
     IIC_Stop();
     return 1;
 }
+/************ GPIO Simulation IIC Mode END **********************/
 
 
-/******************************模拟方式***********************/
-
-
-
-
-/*****************************************************************************
-**********功 能： 硬件还是软件模拟的IIC通信的初始化 ***************************
-**********输入参数：  无  ********************************************
-**********返回 值： 无  ********************************************
+/*******************************************************************************
+* Function:     IIC_TWI_Init()
+* Arguments:  
+* Return:        
+* Description: ATmega128 initialization for TWI_interrupt, TWI_inquiry and GPIO simulation mode
 *******************************************************************************/
 void IIC_TWI_Init(void)
 {
@@ -915,10 +918,11 @@ void IIC_TWI_Init(void)
         IIC_Init();
     }
 }
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 无                     **********************************
+/*******************************************************************************
+* Function:     IIC_TWI_WriteToDevice()
+* Arguments:  DeviceAddr, pData, Length
+* Return:        0: read fail, 1: read success
+* Description: ATmega128 IIC Write data to device for TWI_interrupt, TWI_inquiry and GPIO simulation mode
 *******************************************************************************/
 void IIC_TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -935,11 +939,13 @@ void IIC_TWI_WriteToDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
         IIC_WriteToDevice(DeviceAddr, pData, DataLength);
     }
 }
-/*****************************************************************************
-**********功 能： 向设备写入数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，DataAddr 数据存储的地址 **************
-******************   pdata 数据，DataLength 数据长度  *************************
-**********返回 值： 无                     **********************************
+
+/*******************************************************************************
+* Function:     IIC_TWI_WriteToDeviceByAddr()
+* Arguments:  DeviceAddr, dataAddr, pData, Length
+* Return:        
+* Description: ATmega128 IIC Write data to device with Data Addr 
+                     for TWI_interrupt, TWI_inquiry and GPIO simulation mode
 *******************************************************************************/
 void IIC_TWI_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -956,10 +962,11 @@ void IIC_TWI_WriteToDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData,
         IIC_WriteToDeviceByAddr(DeviceAddr, DataAddr, pData, DataLength);
     }
 }
-/*****************************************************************************
-**********功 能： 从设备读出数据  ****************************************
-**********输入参数： DeviceAddr 设备地址，pdata 数据，DataLength 数据长度 ******
-**********返回 值： 无                     **********************************
+/*******************************************************************************
+* Function:     IIC_TWI_ReadFromDevice()
+* Arguments:  DeviceAddr, pData, Length
+* Return:        
+* Description: ATmega128 IIC read data to device for TWI_interrupt, TWI_inquiry and GPIO simulation mode
 *******************************************************************************/
 void IIC_TWI_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 {
@@ -982,11 +989,19 @@ void IIC_TWI_ReadFromDevice(UINT8 DeviceAddr, UINT8 *pData, UINT8 DataLength)
 ******************   pdata 数据，DataLength 数据长度  *************************
 **********返回 值： 无                     **********************************
 *******************************************************************************/
+/*******************************************************************************
+* Function:     IIC_TWI_ReadFromDeviceByAddr()
+* Arguments:  DeviceAddr, dataAddr, pData, Length
+* Return:
+* Description: ATmega128 IIC read data to device with Data Addr
+for TWI_interrupt, TWI_inquiry and GPIO simulation mode
+*******************************************************************************/
 void IIC_TWI_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData, UINT8 DataLength)
 {
     if (TWI_IIC_MODE == 0)
     {
         //TWI_ReadFromDevice(DeviceAddr,DataLength);
+        NOP();
     }
     else if (TWI_IIC_MODE == 1)
     {
@@ -1005,10 +1020,10 @@ void main_twi(void)
     UINT8 pRData[2];
     UINT8 deviceAddr = 0x13;
     UINT8 length = 4;
-    TWI_Init();
+    IIC_TWI_Init();
     //TWI_WriteToDevice(deviceAddr, length, pWData);
     //TWI_ReadFromDevice(0x23, 2);
-    IIC_WriteToDevice(deviceAddr, pWData, length);
+    IIC_TWI_WriteToDevice(deviceAddr, pWData, length);
     
 
     //while (1);
