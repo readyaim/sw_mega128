@@ -18,11 +18,11 @@
 
 
 ////硬件中断模式;
-//#define TWI_IIC_MODE 0
+#define TWI_IIC_MODE 0 
 ////硬件查询模式;
 //#define TWI_IIC_MODE 1
 //软件模拟方式;
-#define TWI_IIC_MODE 2
+//#define TWI_IIC_MODE 2
 
 
 #define TWI_START 0x08

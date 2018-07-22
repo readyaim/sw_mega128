@@ -906,8 +906,8 @@ void IIC_TWI_Init(void)
 {
     if (TWI_IIC_MODE == 0)
     {
-        Enable_interrupt();
         TWI_Init();
+        Enable_Interrupt_TWI();
     }
     else if (TWI_IIC_MODE == 1)
     {
