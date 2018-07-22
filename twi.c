@@ -2,7 +2,7 @@
  *  TWI.c
  *  Created: 2015/10/30 14:48:50
  *  Author: Administrator
- * Function: TWI driver
+ * Function: TWI driver for ATmega128
  ******************************/
 #include "global.h"
 #include "TWI.h"
