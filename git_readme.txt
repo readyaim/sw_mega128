@@ -25,6 +25,8 @@
     git branch -d | -D branchname 删除branchname分支
     git branch -d -r branchname 删除远程branchname分支
 
+    (or)
+    git push origin --delete <BranchName>
 7、查看本地分支
       git branch
 
@@ -40,6 +42,8 @@
       git branch -a
       git checkout branchname1
       git pull
+11. 删除remotes/origin/HEAD分支
+    git remote set-head origin -d
 -------------------------
 #关于从remote取分支
 git branch -a               //check remote branch
@@ -150,3 +154,8 @@ git commit -a -m
 wd<-index<-repo
 git checkout head filename
 --------------------------
+HEAD: the current commit your repo is on. Most of the time HEAD points to the latest commit in your branch, but that doesn't have to be the case. HEAD really just means "what is my repo currently pointing at". Thanks svick for the heads up on this one (no pun intended)
+In the event that the commit HEAD refers to is not the tip of any branch, this is called a "detached head".
+master: The name of the default branch that git creates for you when first creating a repo. In most cases, "master" means "the main branch". Most shops have everyone pushing to master, and master is considered the definitive view of the repo. But it's also common for release branches to be made off of master for releasing. Your local repo has its own master branch, that almost always follows the master of a remote repo.
+origin: The default name that git gives to your main remote repo. Your box has its own repo, and you most likely push out to some remote repo that you and all your coworkers push to. That remote repo is almost always called origin, but it doesn't have to be.
+HEAD is an official notion in git, HEAD always has a well defined meaning. master and origin are common names usually used in git but they don't have to be.
