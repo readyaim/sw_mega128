@@ -13,7 +13,7 @@
 
 
 /***********************************宏定义**********************************/
-#define fosc 8000000 //晶振8MHZ
+
 #define baud 57600	 //波特率
 #define RXC_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC_BUFF_SIZE 128   //发送缓冲区字节数
@@ -37,8 +37,8 @@ void init_uart0(void)  //初始化COM0
     UCSR0A = 0x00; //初始化, *U2X0=0:非倍速模式
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);//8bit
     Clr_Bit(UCSR0C, USBS0);        //USBS0=0: 1bit stop
-    UBRR0L = (fosc / 16 / (baud + 1)) % 256;     //52
-    UBRR0H = (fosc / 16 / (baud + 1)) / 256;     //0, baud rate = 9600, 0.2% error
+    UBRR0L = (CPU_CLK / 16 / (baud + 1)) % 256;     //52
+    UBRR0H = (CPU_CLK / 16 / (baud + 1)) / 256;     //0, baud rate = 9600, 0.2% error
     UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); //接收使能，发射使能，接收结束中断使能
 }
 

@@ -23,7 +23,7 @@
     git push origin  :remote_branch
     git branch -m | -M oldbranch newbranch 重命名分支，如果newbranch名字分支已经存在，则需要使用-M强制重命名，否则，使用-m进行重命名。
     git branch -d | -D branchname 删除branchname分支
-    git branch -d -r branchname 删除远程branchname分支
+    git branch -d -r branchname 删除远程branchname分支 (works)
 
     (or)
     git push origin --delete <BranchName>
