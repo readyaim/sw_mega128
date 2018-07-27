@@ -27,6 +27,8 @@
 //LED: PORTF
 #define LED2 2 
 #define LED3 3 
+#define LED_PORT PORTF
+#define LED_DDR DDRF
 
 //ADC
 #define ADC1 1 //mismatch in SCH

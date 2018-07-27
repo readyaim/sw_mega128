@@ -1,29 +1,40 @@
 #include "global.h"
 #include<string.h>
 
+
+
 #define SPI_DDR DDRB
 #define SPI_PORT PORTB
-#define SPI_SS_BIT 4
+#define SPI_SS_BIT 0
 #define SPI_INT_EN() Set_Bit(SPCR, SPIE)
 #define SPI_INT_DISABLE() Clr_Bit(SPCR, SPIE)
 
-//#define SS_1 (SPI_PORT|=BIT(4)) //PB4
-//#define SS_0 (SPI_PORT &=~BIT(4))
-
-#define SS_0 (SPI_PORT &=~SPI_SS_BIT)
-#define SS_1 (SPI_PORT|=SPI_SS_BIT)
+#define SS_0 Clr_Bit(SPI_PORT , SPI_SS_BIT)
+#define SS_1 Set_Bit(SPI_PORT, SPI_SS_BIT)
 
 #define xtal 8
 UINT8 TXbuffer[8] = { 0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f };
 UINT8 RXbuffer[8] = { 0,0,0,0,0,0,0,0 };
 UINT8 cnt = 0;
 UINT8 M_flag = 0;
+
 extern void delay_ms(UINT16 millisecond);
 extern void delay_us(UINT16 microsecond);
-UINT8 SPI_Master_nSlave = 0xFF;    //0xFF: master, 0: slave
+
+extern void led_on(void);
+extern void led_off(void);
+
+
+#ifdef _SPI_TX
 UINT8 SPI_Send_nReceive = 0xFF;    //0xFF: spi send, 0: spi recieve
-
-
+#else
+UINT8 SPI_Send_nReceive = 0x00;    //0xFF: spi send, 0: spi recieve
+#endif
+#ifdef _SPI_MASTER
+UINT8 SPI_Master_nSlave = 0xFF;    //0xFF: master, 0: slave
+#else
+UINT8 SPI_Master_nSlave = 0x00;    //0xFF: master, 0: slave
+#endif
 
 
 /*******************************************************************************
@@ -118,16 +129,37 @@ UINT8 SPI_Inquiry_SlaveRx(void)
 #pragma interrupt_handler SPI_STC_isr:iv_SPI_STC
 void SPI_STC_isr(void) 
 {
-    //CLI();
-	RXbuffer[cnt] = SPDR;
-	if (cnt >= 7) 
+    CLI();
+#ifdef _SPI_TX
+    RXbuffer[cnt] = SPDR;
+    if (cnt >= 7) 
 	{
 		cnt = 0;
 		M_flag = 1;
 	} 
 	cnt++;
 	SPDR = TXbuffer[cnt];  //byte in SPDR has been sent/received
-    //SEI();
+#else
+    RXbuffer[cnt] = SPDR;
+    if (cnt >= 7)
+    {
+        cnt = 0;
+        M_flag = 1;
+    }
+    
+    if (RXbuffer[cnt] == 0xA5)
+    {
+        beep();
+        led_on();
+    }
+    else if (RXbuffer[cnt] == 0x86)
+    {
+        beep();
+        led_off();
+    }
+        cnt++;
+#endif
+    SEI();
 }
 
 /*******************************************************************************
@@ -177,11 +209,41 @@ void main_spi_inquiry(void)
     CLI();
     SPI_MasterPort_init();
     SPI_MasterRegisters_init();
-    SEI();
     SPI_INT_DISABLE();
-
+    SEI();
+    
     SS_0;
     SPI_Inquiry_MasterTx(0xA5);
-    SPI_Inquiry_MasterTx(0x5A);
+    //SPI_Inquiry_MasterTx(0x5A);
     SS_1;
+}
+
+/*******************************************************************************
+* Function:     test_spi_loop_Tx_inquiry()
+* Arguments:
+* Return:
+* Description: output 0xA5 and 0x86 
+*******************************************************************************/
+void test_spi_loop_Tx_inquiry(void)
+{
+    UINT8 i = 0;
+    UINT8 data[2] = { 0xA5, 0x86 };
+    CLI();
+    SPI_MasterPort_init();
+    SPI_MasterRegisters_init();
+    SPI_INT_DISABLE();
+    SEI();
+
+    while (1)
+    {
+        SS_0;
+        SPI_Inquiry_MasterTx(data[0]);
+        SS_1;
+        delay_ms(1);
+        SS_0;
+        SPI_Inquiry_MasterTx(data[1]);
+        //SPI_Inquiry_MasterTx(0x5A);
+        SS_1;
+        delay_ms(1);
+    }
 }

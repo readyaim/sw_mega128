@@ -59,6 +59,9 @@ extern void Delay(UINT32);
 
 
 
+/* for debug only*/
+//#define _SPI_TX
+//#define _SPI_MASTER
 
 //typedef struct adscale {
 //    UINT8 Sensor;//sensor No.

@@ -26,6 +26,7 @@ extern void main_processCmd(void);
 extern void main_twi(void);
 extern void main_spi_inquiry(void);
 extern void main_spi_interrupt(void);
+extern void test_spi_loop_Tx_inquiry(void);
 
 UINT32 SystemTickCount;
 struct Fifo CommandFifo;
@@ -43,10 +44,18 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 
 void main(void)
 {
+    init_beep();
+    init_led();
     //main_uart0();
     //main_twi();
-    //main_spi_inquiry();
+#ifdef _SPI_Master
+    test_spi_loop_Tx_inquiry();
+#else
     main_spi_interrupt();
+#endif // _SPI_Master
+
+    
+    
     main_processCmd();
     
 

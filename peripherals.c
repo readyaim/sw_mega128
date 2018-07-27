@@ -1,6 +1,7 @@
 #include "global.h"
 #include "peripherals.h"
 
+
 /****************************************************************************
 Function: Beep×Ó³ÌÐò
 Arguments: 
@@ -102,8 +103,30 @@ void init_watchdog(void)
 *******************************************************************************/
 void init_led(void)
 {
-    PORTF = 0xFF;   //HIGH,=Turn off LED
-    DDRF = 0xFF;    //OUT
+    LED_PORT = 0xFF;    //HIGH,=Turn off LED
+    LED_DDR = 0xFF;     //OUT
+}
+
+/*******************************************************************************
+* Function:  led_on()
+* Arguments:
+* Return:
+* Description:  LED2 ON
+*******************************************************************************/
+void led_on(void)
+{
+    Clr_Bit(LED_PORT, LED2);
+}
+
+/*******************************************************************************
+* Function:  led_off()
+* Arguments:
+* Return:
+* Description:  LED2 OFF
+*******************************************************************************/
+void led_off(void)
+{
+    Set_Bit(LED_PORT, LED2);
 }
 /*******************************************************************************
 * Function:  main_watchdog()
