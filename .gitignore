@@ -5,6 +5,7 @@
 ## include all *.c files in root and subfolders
 !*.c
 !*.h
+!*.bat
 !git_readme.txt
 #exclude folders
 /example/
