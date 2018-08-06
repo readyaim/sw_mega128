@@ -1,4 +1,5 @@
 #include "global.h"
+#include "peripherals.h"
 #include<string.h>
 
 
@@ -187,7 +188,10 @@ void main_spi_interrupt(void)
     SPDR = TXbuffer[0];
     while (1)
     {
-        NOP();
+        Clr_Bit(LED_PORT, LED3);
+        delay_ms(2000);
+        Set_Bit(LED_PORT, LED3);
+        delay_ms(2000);
         //if (M_flag == 1) {
         //	for (i = 0; i < 8; i++) {
         //		PORTA = RXbuffer[i];
@@ -246,4 +250,13 @@ void test_spi_loop_Tx_inquiry(void)
         SS_1;
         delay_ms(1);
     }
+}
+void main_spi(void)
+{
+
+#ifdef _SPI_Master
+    test_spi_loop_Tx_inquiry();
+#else
+    main_spi_interrupt();
+#endif // _SPI_Master
 }

@@ -27,7 +27,8 @@ extern void main_twi(void);
 extern void main_spi_inquiry(void);
 extern void main_spi_interrupt(void);
 extern void test_spi_loop_Tx_inquiry(void);
-
+extern void main_key2SEG(void);
+extern void main_spi(void);
 UINT32 SystemTickCount;
 struct Fifo CommandFifo;
 
@@ -48,11 +49,8 @@ void main(void)
     init_led();
     //main_uart0();
     //main_twi();
-#ifdef _SPI_Master
-    test_spi_loop_Tx_inquiry();
-#else
-    main_spi_interrupt();
-#endif // _SPI_Master
+    main_key2SEG();
+    //main_spi();
 
     
     
