@@ -4,6 +4,7 @@
 extern void find_key(UINT8 n);
 extern void init_port_keyboard(void);
 extern void test_timer0(void);
+extern void init_SEG1(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -122,7 +123,8 @@ void main_processCmd(void)
 {
     int i = 0;
     BOOL empty;
-    init_port_keyboard();
+    //init_port_keyboard();
+    init_SEG1();
     empty = IsEmpty(&CommandFifo);
     //for (i = 0; i < 10; i++)
     //{
