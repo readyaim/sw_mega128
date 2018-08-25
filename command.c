@@ -3,6 +3,7 @@
 
 extern void find_key(UINT8 n);
 extern void init_port_keyboard(void);
+extern void test_timer0(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -123,11 +124,11 @@ void main_processCmd(void)
     BOOL empty;
     init_port_keyboard();
     empty = IsEmpty(&CommandFifo);
-    for (i = 0; i < 10; i++)
-    {
-        AddFifo(&CommandFifo, 0x10|i);
-        //(*CommandFifo.AddFifo)(&CommandFifo, 0x11);
-    }
+    //for (i = 0; i < 10; i++)
+    //{
+    //    AddFifo(&CommandFifo, 0x10|i);
+    //    //(*CommandFifo.AddFifo)(&CommandFifo, 0x11);
+    //}
    
      //while (1) 
      //   {
@@ -138,7 +139,7 @@ void main_processCmd(void)
      //       }*/
      //       delay_ms(3000);
      //   }
-
+    test_timer0();
     while (1)
     {
         empty = IsEmpty(&CommandFifo);
@@ -147,8 +148,8 @@ void main_processCmd(void)
         /*if (KeyPressed) {
         HandleKey();
         }*/
-        delay_ms(5000);
-        NOP();
+        //delay_ms(5000);
+        //NOP();
     }
 
 }

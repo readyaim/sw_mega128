@@ -1,5 +1,6 @@
 #include "global.h"
 #include "peripherals.h"
+#include "fifo.h"
 
 static UINT16 ext_counter = 0;	//static means only allow timer.c use global ext_counter
 static UINT16 num_of_timer0_int = 0;
@@ -25,6 +26,7 @@ void timer0_init(void)
 *******************************************************************************/
 void timer1_init(void)
 {
+    
     TCCR0 |= (1 << CS01) | (1 << CS00);//TC0  xxxx xx11=32·ÖÆµ, 4*2^(CS02CS01CS00)
     TCNT0 = 0X83;//only valid at begining,counter = (0XFF-0X83)
     Set_Bit(TIMSK, TOIE0);   //timer interrupt sources, TOIE0=1: TC0 overflow interrupt enable. OCIE0=1: TC0 output match B interrupt is enable
@@ -33,7 +35,7 @@ void timer1_init(void)
 #pragma interrupt_handler timer0_ovf_isr:iv_TIMER0_OVF
 void timer0_ovf_isr(void)
 {
-
+    static int i = 0;
     ext_counter++;
     TCNT0 = 0X00;   //reload the counter, 8-bit
     if (ext_counter < 2000)
@@ -50,6 +52,11 @@ void timer0_ovf_isr(void)
     {
         ext_counter = 0;
         //beep();
+
+        AddFifo(&CommandFifo, 0x10 | i );
+        i++;
+        if (i == 10)
+            i = 0;
     }
     //printf("ext_counter = %d\r\n",ext_counter);
     num_of_timer0_int += 1;
@@ -171,6 +178,18 @@ void test_timer0(void)
     CLI();
     init_devices_timer0();
     beep();
+    //Set_Bit(MCUCR, SE);	//enable sleep enable = 1
+    SEI();
+    //SLEEP();
+    //while (1)
+    //{
+    //}
+}
+void test_timer1(void)
+{
+    CLI();
+    init_devices_timer0();
+    beep();
     Set_Bit(MCUCR, SE);	//enable sleep enable = 1
     SEI();
     SLEEP();
@@ -178,7 +197,14 @@ void test_timer0(void)
     //{
     //}
 }
-void test_timer1(void)
+
+/*******************************************************************************
+* Function:  test_timer2()
+* Arguments:
+* Return:
+* Description:  timer2 interrupt
+*******************************************************************************/
+void test_timer2(void)
 {
     CLI();
     init_devices_timer0();

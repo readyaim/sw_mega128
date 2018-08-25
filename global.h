@@ -51,7 +51,7 @@ extern void delay_ms(UINT16 millisecond);
 #define Clr_Bit(val, bitn)    (val&=~(1<<(bitn))) 
 #define Get_Bit(val, bitn)    (val &(1<<(bitn))) 
 
-#define TIMER0_ADC 
+//#define TIMER0_ADC 
 
 
 extern BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay);
