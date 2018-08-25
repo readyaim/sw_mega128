@@ -22,6 +22,7 @@ extern void test_timer0(void);
 extern void main_adc1(void);
 extern void main_watchdog(void);
 extern void main_uart0(void);
+extern void main_uart1(void);
 extern void main_processCmd(void);
 extern void main_twi(void);
 extern void main_spi_inquiry(void);
@@ -45,17 +46,18 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 
 void main(void)
 {
+    CLI();  //disable all interrupt until initialization is done
     init_beep();
     init_led();
     //main_uart0();
+    //main_uart1();
     //main_twi();
-    main_key2SEG();
+    //main_key2SEG();
     //main_spi();
 
     
-    
+    //    
     main_processCmd();
     
-
 }
 

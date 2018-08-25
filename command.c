@@ -1,6 +1,9 @@
 #include "global.h"
 #include "fifo.h"
 
+extern void find_key(UINT8 n);
+extern void init_port_keyboard(void);
+
 /*******************************************************************************
 * Function:  processCmd()
 * Arguments:  data
@@ -13,7 +16,7 @@ void processCmd(UINT8 data)
     UINT8 str[80];
     /*struct Result result;
     LED_Status = LED_QuickFlash;*/
-    command = (data & 0xe0) >> 5;
+    command = (data & 0xF0) >> 4;
     switch (command)
     {
         case GENERAL:
@@ -31,10 +34,11 @@ void processCmd(UINT8 data)
                     break;
             }
             break;
-        case SelectChannelName:
+        case ShowNumOnLED:
             /*ChannelNameIndex = data & 0x1f;
             for (i = 0; i < 12; i++) ChannelName[i] = ChannelNames[ChannelNameIndex][i];
             printf("Channel Name : %s\r\n", ChannelName);*/
+            find_key(data & 0x0F);
             break;
         case SELECTCHANNEL:
         case SELECTEXPENDCHANNEL:
@@ -115,11 +119,36 @@ void processCmd(UINT8 data)
 *******************************************************************************/
 void main_processCmd(void)
 {
-    while (1) {
-        if (!(*CommandFifo.IsEmpty)(&CommandFifo))
-            processCmd((*CommandFifo.FetchFifo)(&CommandFifo));
+    int i = 0;
+    BOOL empty;
+    init_port_keyboard();
+    empty = IsEmpty(&CommandFifo);
+    for (i = 0; i < 10; i++)
+    {
+        AddFifo(&CommandFifo, 0x10|i);
+        //(*CommandFifo.AddFifo)(&CommandFifo, 0x11);
+    }
+   
+     //while (1) 
+     //   {
+     //       if (!(*CommandFifo.IsEmpty)(&CommandFifo))
+     //           processCmd((*CommandFifo.FetchFifo)(&CommandFifo));
+     //       /*if (KeyPressed) {
+     //       HandleKey();
+     //       }*/
+     //       delay_ms(3000);
+     //   }
+
+    while (1)
+    {
+        empty = IsEmpty(&CommandFifo);
+        if (!empty)
+            processCmd(FetchFifo(&CommandFifo));
         /*if (KeyPressed) {
         HandleKey();
         }*/
+        delay_ms(5000);
+        NOP();
     }
+
 }

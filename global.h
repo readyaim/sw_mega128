@@ -27,7 +27,8 @@
 //#define VREFPWM OCR1CL
 
 #define GENERAL 0
-#define SelectChannelName 1
+#define ShowNumOnLED 1
+//#define SelectChannelName 1
 #define SELECTCHANNEL 2
 #define SELECTEXPENDCHANNEL 3
 #define SETMEASUREMETHOD 4

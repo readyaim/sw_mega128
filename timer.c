@@ -5,8 +5,25 @@ static UINT16 ext_counter = 0;	//static means only allow timer.c use global ext_
 static UINT16 num_of_timer0_int = 0;
 extern UINT32 SystemTickCount;
 
-
+/*******************************************************************************
+* Function:  timer0_init()
+* Arguments:
+* Return:
+* Description:  timer0 register initialization
+*******************************************************************************/
 void timer0_init(void)
+{
+    TCCR0 |= (1 << CS01) | (1 << CS00);//TC0  xxxx xx11=32·ÖÆµ, 4*2^(CS02CS01CS00)
+    TCNT0 = 0X83;//only valid at begining,counter = (0XFF-0X83)
+    Set_Bit(TIMSK, TOIE0);   //timer interrupt sources, TOIE0=1: TC0 overflow interrupt enable. OCIE0=1: TC0 output match B interrupt is enable
+}
+/*******************************************************************************
+* Function:  timer1_init()
+* Arguments:
+* Return:
+* Description:  timer1 register initialization
+*******************************************************************************/
+void timer1_init(void)
 {
     TCCR0 |= (1 << CS01) | (1 << CS00);//TC0  xxxx xx11=32·ÖÆµ, 4*2^(CS02CS01CS00)
     TCNT0 = 0X83;//only valid at begining,counter = (0XFF-0X83)
@@ -56,11 +73,23 @@ void timer0_comp_isr(void)
 
 /******TIMER 0 Interrupt**********/
 // call this routine to initialize all peripherals
-void init_port_timer0(void)
+/*******************************************************************************
+* Function:  init_LED_port()
+* Arguments:
+* Return:
+* Description:  initiate LED for timer0 test
+*******************************************************************************/
+void init_LED_port(void)
 {
     Set_Bit(PORTF, LED2);
     Set_Bit(DDRF, LED2);
 }
+/*******************************************************************************
+* Function:  init_devices_timer0()
+* Arguments:
+* Return:
+* Description:  timer0 hardware device initiation
+*******************************************************************************/
 void init_devices_timer0(void)
 {
     //stop errant interrupts until set up
@@ -74,9 +103,32 @@ void init_devices_timer0(void)
     NOP();
     NOP();
     NOP();
-    init_port_timer0();
+    init_LED_port();
     timer0_init();
 }
+
+/*******************************************************************************
+* Function:  init_devices_timer1()
+* Arguments:
+* Return:
+* Description:  timer1 hardware device initiation
+*******************************************************************************/
+void init_devices_timer1(void)
+{
+    //stop errant interrupts until set up
+    CLI(); //disable all interrupts
+    Clr_Bit(XDIV, XDIVEN);		//disable xtal divider, run at 8MHz, if XDIV(7)==1, clk=src_clk/(129-div), write div only when xdiv(7) is 1
+    NOP();  //writing to XDIV cause unstable running of code. Run 8 NOP()s to wait clk stable
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+    timer1_init();
+}
+
 /*******************************************************************************
 * Function:  init_timer1()
 * Arguments: 
@@ -115,6 +167,18 @@ void timer1_ovEnable(void)
 
 
 void test_timer0(void)
+{
+    CLI();
+    init_devices_timer0();
+    beep();
+    Set_Bit(MCUCR, SE);	//enable sleep enable = 1
+    SEI();
+    SLEEP();
+    //while (1)
+    //{
+    //}
+}
+void test_timer1(void)
 {
     CLI();
     init_devices_timer0();
