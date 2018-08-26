@@ -26,16 +26,18 @@ void init_SEG(void) {
 }
 
 /****************************************************************************
-Function: 初始化SEG端口1
+Function: 初始化SEG4
 Arguments: 
 Return: 
 ****************************************************************************/
-void init_SEG1(void) {
+void init_SEG4(void) 
+{
 
-    DDRD = 0XFF;
-    PORTD = 0XFF;
-    DDRG = 0XFF;
-    PORTG = 0X1A;
+    DDRD = 0XFF;        //set SEG data as output
+    PORTD = 0XFF;       //set SEG data as high
+    DDRG = 0x1B;        //set SEG select as output
+    PORTG = 0X1B;       //select SEG
+    SEG4_ON;
 }
 
 /****************************************************************************
