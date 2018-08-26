@@ -23,7 +23,7 @@ extern void main_adc1(void);
 extern void main_watchdog(void);
 extern void main_uart0(void);
 extern void main_uart1(void);
-extern void main_processCmd(void);
+extern void timer2_processCmd(void);
 extern void main_twi(void);
 extern void main_spi_inquiry(void);
 extern void main_spi_interrupt(void);
@@ -31,6 +31,7 @@ extern void test_spi_loop_Tx_inquiry(void);
 extern void main_key2SEG(void);
 extern void main_spi(void);
 extern void init_SEG4(void);
+extern void test_timer2(void);
 UINT32 SystemTickCount;
 struct Fifo CommandFifo;
 
@@ -50,16 +51,12 @@ void main(void)
     CLI();  //disable all interrupt until initialization is done
     init_beep();
     init_led();
-    init_SEG4();
     //main_uart0();
     //main_uart1();
     //main_twi();
     //main_key2SEG();
     //main_spi();
-
-    
-    //    
-    main_processCmd();
+    timer2_processCmd();
     
 }
 

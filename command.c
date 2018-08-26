@@ -2,9 +2,8 @@
 #include "fifo.h"
 
 extern void find_key(UINT8 n);
-extern void init_port_keyboard(void);
-extern void test_timer0(void);
 extern void init_SEG4(void);
+extern void test_timer2(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -114,33 +113,18 @@ void processCmd(UINT8 data)
     return;
 }
 /*******************************************************************************
-* Function:  main_processCmd()
+* Function:  timer2_processCmd()
 * Arguments:  
 * Return: 
-* Description:  处理命令的入口函数
+* Description:  timer2 writes CommandFifo every 4s.
+                      processCmd executes (show data in SEG4) fifo command when CommandFifo is not empty
 *******************************************************************************/
-void main_processCmd(void)
+void timer2_processCmd(void)
 {
     int i = 0;
     BOOL empty;
-    //init_port_keyboard();
-    empty = IsEmpty(&CommandFifo);
-    //for (i = 0; i < 10; i++)
-    //{
-    //    AddFifo(&CommandFifo, 0x10|i);
-    //    //(*CommandFifo.AddFifo)(&CommandFifo, 0x11);
-    //}
-   
-     //while (1) 
-     //   {
-     //       if (!(*CommandFifo.IsEmpty)(&CommandFifo))
-     //           processCmd((*CommandFifo.FetchFifo)(&CommandFifo));
-     //       /*if (KeyPressed) {
-     //       HandleKey();
-     //       }*/
-     //       delay_ms(3000);
-     //   }
-    test_timer0();
+    init_SEG4();    //enable SEG4, can be run in main()
+    test_timer2();  //enable timer2 ovf interrupt, can be run in main()
     while (1)
     {
         empty = IsEmpty(&CommandFifo);
@@ -149,8 +133,6 @@ void main_processCmd(void)
         /*if (KeyPressed) {
         HandleKey();
         }*/
-        //delay_ms(5000);
-        //NOP();
     }
 
 }
