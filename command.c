@@ -4,6 +4,8 @@
 extern void find_key(UINT8 n);
 extern void init_SEG4(void);
 extern void test_timer2(void);
+extern void uart1_init(void);
+extern void uart1_checkCMDPolling(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -134,5 +136,31 @@ void timer2_processCmd(void)
         HandleKey();
         }*/
     }
-
+}
+/*******************************************************************************
+* Function:  uart1_processCmd()
+* Arguments:
+* Return:
+* Description:  if the ch from UART1 is between '0' to '9', then AddFifo cmd to display num in SEG4.
+                processCmd executes (show data in SEG4) fifo command when CommandFifo is not empty
+*******************************************************************************/
+void uart1_processCmd(void)
+{
+    int i = 0;
+    BOOL empty;
+    CLI();
+    init_SEG4();    //enable SEG4, can be run in main()
+    //test_timer2();  //enable timer2 ovf interrupt, can be run in main()
+    uart1_init();
+    SEI();
+    while (1)
+    {
+        empty = IsEmpty(&CommandFifo);
+        if (!empty)
+            processCmd(FetchFifo(&CommandFifo));
+        /*if (KeyPressed) {
+        HandleKey();
+        }*/
+        uart1_checkCMDPolling();
+    }
 }

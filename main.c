@@ -32,6 +32,14 @@ extern void main_key2SEG(void);
 extern void main_spi(void);
 extern void init_SEG4(void);
 extern void test_timer2(void);
+extern void uart1_processCmd(void);
+
+#ifdef _DUMMY_CODE
+extern void test_char2int(void);
+extern void test_strcmp(void);
+extern void test_usr(void);
+#endif // _DUMMY_CODE
+
 UINT32 SystemTickCount;
 struct Fifo CommandFifo;
 
@@ -56,7 +64,12 @@ void main(void)
     //main_twi();
     //main_key2SEG();
     //main_spi();
-    timer2_processCmd();
+    //timer2_processCmd();
+    //test_char2int();
+    //test_usr();
+    uart1_processCmd();
+
+
     
 }
 

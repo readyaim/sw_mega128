@@ -1,4 +1,4 @@
-@echo off
+@echo on
 ::Mega128A
 Set C_FILES=*.c
 Set H_FILES=*.h
@@ -13,7 +13,7 @@ echo %OBJ_FOLDER1%
 
 echo Back to U_Disk
 
-@echo off
+@echo on
 pause
 
 ::copy sw_mega128 to U_disk

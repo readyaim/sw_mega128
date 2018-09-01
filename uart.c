@@ -10,7 +10,7 @@
 
 /*********************************包含头文件********************************/
 #include "global.h"
-
+#include "fifo.h"
 
 /***********************************宏定义**********************************/
 
@@ -19,6 +19,8 @@
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
+
+extern BOOL AddFifo(struct Fifo *this, UINT8 data);
 
 // add static to forbiden other file to use
 static UINT8 RXC0_BUFF[RXC0_BUFF_SIZE];   //定义接受缓冲区
@@ -332,6 +334,53 @@ void uart1_puts(char *s)     //发送字符串函数
     uart1_putchar(0x0D);  //CR, cursors return. for windows, must be ahead of 0x0A
     uart1_putchar(0x0A);  //LF Line forward, for win+linux}
 }
+
+/*******************************************************************************
+* Function:     uart1_gets()
+* Arguments:  *rcv
+* Return:        
+* Description:  save UART1 received data to *rcv
+*******************************************************************************/
+void uart1_gets(UINT8 *rcv)
+{
+    while (RXC1_RD != RXC1_WR)
+    {
+        *rcv = RXC1_BUFF[RXC1_RD];
+        if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
+            RXC1_RD++;
+        else
+            RXC1_RD = 0;
+        rcv++;
+    }
+}
+/*******************************************************************************
+* Function:     uart1_checkCMDPolling()
+* Arguments:  
+* Return:        
+* Description:  check if there is command received(polling) 
+*******************************************************************************/
+void uart1_checkCMDPolling(void)
+{
+    UINT8 ch;
+    
+//    RXC1_BUFF[RXC1_WR] = '5';
+//    RXC1_WR += 1;
+
+    while (RXC1_RD != RXC1_WR)
+    {
+        ch = RXC1_BUFF[RXC1_RD];
+        uart1_putchar(ch);
+        if (ch > '0' && ch < '9')
+        {
+            AddFifo(&CommandFifo, ch);
+        }
+        if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
+            RXC1_RD++;
+        else
+            RXC1_RD = 0;
+    }
+}
+
 /****************************************************************************
 Function Name: 初始化单片机
 Arguments:
@@ -401,12 +450,12 @@ void uart1_loopback(void)
 
 
 /*******************************************************************************
-* Function Name: : uart1_putcharBackup()
+* Function Name: : uart1_putcharPolling()
 * Arguments:
 * Returns: :
 * Descriptions:  Send out a data through uart1. For furture use.
 *******************************************************************************/
-int uart1_putcharBackup(char ch)
+int uart1_putcharPolling(char ch)
 {
     //while (!(UCSR1A&(1 << UDRE1))); 
     while (!(Get_Bit(UCSR1A, UDRE1)));  //if UDRE1=1, Tx buffer is ready for next transmit.
@@ -420,7 +469,7 @@ Function Name: uart1初始化程序
 Arguments:
 Returns: :
 ****************************************************************************/
-void uart1_Init(void)  //初始化COM0
+void uart1_init_register(void)  //初始化COM0
 {
     UINT16 ubrr = MYUBRR;
     UCSR1B = 0x00; //初始化
@@ -484,20 +533,41 @@ void uart1_rx_isr(void)
 }
 
 /****************************************************************************
-Function Name: 主程序
+Function Name: uart1_init_buffer
 Arguments:
 Returns:
 Descriptions:
 ****************************************************************************/
-void main_uart1(void)
+void uart1_init_buffer(void)
 {
-    unsigned int i;
     TXC1_RD = 0;
     TXC1_WR = 0;
     RXC1_RD = 0;
     RXC1_WR = 0;
+}
+
+/****************************************************************************
+Function Name: uart1_init
+Arguments:
+Returns:
+Descriptions:
+****************************************************************************/
+void uart1_init(void)
+{
+    uart1_init_buffer();
     uart1_init_devices();
-    uart1_Init();
+    uart1_init_register();
+}
+/****************************************************************************
+Function Name: main_uart1_loopback
+Arguments:
+Returns:
+Descriptions:
+****************************************************************************/
+void main_uart1_loopback(void)
+{
+    unsigned int i;
+    uart1_init();
     SEI();  //允许中断
     uart1_putchar('t');
     while (1)
@@ -515,3 +585,63 @@ void main_uart1(void)
         uart1_loopback();
     }
 }
+
+
+
+#ifdef _DUMMY_CODE
+/****************************************************************************
+Function:       char2int()
+Arguments:    char
+Returns:
+Descriptions:  transfer char to int
+****************************************************************************/
+UINT8 char2int(UINT8 ch)
+{
+    UINT8 t;
+    t = 'a';
+    return (UINT8)((UINT16)(ch));
+    if ((ch >= '0') && (ch <= '9'))
+        return ch - '0' + 48;
+    else if ((ch >= 'A') && (ch <= 'Z'))
+        return ch - 'A' + 65;
+    else if ((ch >= 'a') && (ch <= 'z'))
+        return ch - 'a' + 97;
+    else return (-1);
+}
+/****************************************************************************
+Function Name: test_char2int()
+Arguments:
+Returns:
+Descriptions: transfer char to int
+****************************************************************************/
+void test_char2int(void)
+{
+    UINT8 *s = "123456789";
+    UINT8 ch;
+    UINT8 data;
+    UINT8 command;
+    TXC1_RD = 0;
+    while (*s)
+    {
+        ch = *s;
+        s++;
+        command = (ch & 0xF0) >> 4;
+        data = ch & 0x0F;
+        switch (command)
+        {
+            case 0x00: 
+                break;
+            case 0x3: 
+                if ((data>=0) && (data<=9))
+                    AddFifo(&CommandFifo, ch);
+                break;
+            default://printf("Illegal command!!\r\n"); 
+                break;
+        }
+   }
+
+    NOP();
+    while (1);
+}
+#endif // _DUMMY_CODE
+

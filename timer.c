@@ -112,7 +112,7 @@ void timer2_ovf_isr(void)
         ext_counter = 0;
         //beep();
 
-        AddFifo(&CommandFifo, 0x10 | i);
+        AddFifo(&CommandFifo, 0x30 | i);
         i++;
         if (i == 10)
             i = 0;

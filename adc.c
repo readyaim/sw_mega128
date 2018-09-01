@@ -24,7 +24,6 @@ void init_port_adc1(void)
 //CPU总体初始化
 void init_devices(void)
 {
-    
     init_beep();
     init_SEG();
     init_port_adc1();
