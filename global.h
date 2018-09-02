@@ -28,10 +28,12 @@
 
 #define GENERAL 0
 #define ShowNumOnLED 3
-//#define SelectChannelName 1
+#define CollectData 4
+
+#define SETMEASUREMETHOD 1
 #define SELECTCHANNEL 2
 #define SELECTEXPENDCHANNEL 8
-#define SETMEASUREMETHOD 4
+
 #define MEASURECURRENT 5
 #define SETChannelCV 6
 #define SETCCPWM 7
@@ -52,7 +54,7 @@ extern void delay_ms(UINT16 millisecond);
 #define Clr_Bit(val, bitn)    (val&=~(1<<(bitn))) 
 #define Get_Bit(val, bitn)    (val &(1<<(bitn))) 
 
-//#define TIMER0_ADC 
+#define TIMER0_ADC 
 #define _ATMEGA128A
 #define _DUMMY_CODE
 

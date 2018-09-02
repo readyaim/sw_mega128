@@ -14,8 +14,9 @@
 
 /***********************************宏定义**********************************/
 
-#define BAUD 9600	 //baud rate of UART
-#define MYUBRR (CPU_CLK/16/BAUD-1)
+#define UART0_BAUD 19200	 //UART0_BAUD rate 
+#define UART1_BAUD 9600	 //UART1_BAUD rate
+#define MYUBRR (CPU_CLK/16/UART1_BAUD-1)
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
@@ -47,7 +48,7 @@ Function Name: uart0初始化程序
 Arguments: 
 Returns: :
 ****************************************************************************/
-void uart0_Init(void)  //初始化COM0
+void uart0_init_register(void)  //初始化COM0
 {
     UCSR0B = 0x00; //初始化
     UCSR0A = 0x00; //初始化, *U2X0=0:非倍速模式
@@ -55,12 +56,12 @@ void uart0_Init(void)  //初始化COM0
     Clr_Bit(UCSR0C, USBS0);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
     //U2X = 0
-    UBRR0L = (CPU_CLK /  (BAUD * 16) - 1) % 256;     //51
-    UBRR0H = (CPU_CLK / (BAUD * 16)  - 1) / 256;     //0, BAUD rate = 9600, 0.2% error
+    UBRR0L = (CPU_CLK /  (UART0_BAUD * 16) - 1) % 256;     //51
+    UBRR0H = (CPU_CLK / (UART0_BAUD * 16)  - 1) / 256;     //0, UART0_BAUD rate =250000, 0.0% error
 #else   
     //atmega64, 128
-    UBRR0L = (CPU_CLK / 16 / (BAUD + 1)) % 256;     //52
-    UBRR0H = (CPU_CLK / 16 / (BAUD + 1)) / 256;     //0, BAUD rate = 9600, 0.2% error
+    UBRR0L = (CPU_CLK / 16 / (UART0_BAUD + 1)) % 256;     //52
+    UBRR0H = (CPU_CLK / 16 / (UART0_BAUD + 1)) / 256;     //0, BAUD rate = 9600, 0.2% error
 #endif // _ATMEGA128A
 
     
@@ -213,7 +214,7 @@ void main_uart0(void)
     RXC0_RD = 0;
     RXC0_WR = 0;
     uart0_init_devices();
-    uart0_Init();
+    uart0_init_register();
     SEI();  //允许中断
     uart0_putchar('t');
     while (1)
@@ -231,7 +232,24 @@ void main_uart0(void)
         uart0_loopback();
     }
 }
-
+/****************************************************************************
+Function :      init_uart0
+Arguments:
+Returns:
+Descriptions:
+****************************************************************************/
+void init_uart0(void)
+{
+    unsigned int i;
+    TXC0_RD = 0;
+    TXC0_WR = 0;
+    RXC0_RD = 0;
+    RXC0_WR = 0;
+    uart0_init_devices();
+    uart0_init_register();
+    SEI();  //允许中断
+    
+}
 /*******************************************************************************
 * Function Name: : uart0_putcharBackup()
 * Arguments: 
@@ -478,12 +496,12 @@ void uart1_init_register(void)  //初始化COM0
     Clr_Bit(UCSR1C, USBS1);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
     //U2X = 0
-    UBRR1L = (UINT8) (ubrr);     //51 for baud rate 9600
-    UBRR1H = (UINT8) (ubrr >> 8 );     //0, BAUD rate = 9600, 0.2% error
+    UBRR1L = (UINT8) (ubrr);     //51 for UART1_BAUD rate 9600
+    UBRR1H = (UINT8) (ubrr >> 8 );     //0, UART1_BAUD rate = 9600, 0.2% error
 #else   
                                    //atmega64, 128
-    UBRR1L = (CPU_CLK / 16 / (BAUD + 1)) % 256;     //52
-    UBRR1H = (CPU_CLK / 16 / (BAUD + 1)) / 256;     //0, BAUD rate = 9600, 0.2% error
+    UBRR1L = (CPU_CLK / 16 / (UART1_BAUD + 1)) % 256;     //52
+    UBRR1H = (CPU_CLK / 16 / (UART1_BAUD + 1)) / 256;     //0, UART1_BAUD rate = 9600, 0.2% error
 #endif // _ATMEGA128A
     UCSR1B = (1 << RXEN1) | (1 << TXEN1) | (1 << RXCIE1); //Rx enable, Tx enable, Rx interrupt enable
 }

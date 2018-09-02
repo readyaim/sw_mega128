@@ -22,7 +22,7 @@ extern void test_timer0(void);
 extern void main_adc1(void);
 extern void main_watchdog(void);
 extern void main_uart0(void);
-extern void main_uart1(void);
+extern void main_uart1_loopback(void);
 extern void timer2_processCmd(void);
 extern void main_twi(void);
 extern void main_spi_inquiry(void);
@@ -33,11 +33,13 @@ extern void main_spi(void);
 extern void init_SEG4(void);
 extern void test_timer2(void);
 extern void uart1_processCmd(void);
+extern void init_uart0(void);
 
 #ifdef _DUMMY_CODE
 extern void test_char2int(void);
 extern void test_strcmp(void);
 extern void test_usr(void);
+extern void collectADC0(void);
 #endif // _DUMMY_CODE
 
 UINT32 SystemTickCount;
@@ -59,15 +61,18 @@ void main(void)
     CLI();  //disable all interrupt until initialization is done
     init_beep();
     init_led();
+    init_uart0();   //enable printf
     //main_uart0();
-    //main_uart1();
+    //main_uart1_loopback();
     //main_twi();
     //main_key2SEG();
     //main_spi();
     //timer2_processCmd();
     //test_char2int();
     //test_usr();
-    uart1_processCmd();
+    //uart1_processCmd();
+    //main_adc1();
+    collectADC0();
 
 
     

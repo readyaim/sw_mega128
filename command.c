@@ -43,7 +43,24 @@ void processCmd(UINT8 data)
             printf("Channel Name : %s\r\n", ChannelName);*/
             find_key(data & 0x0F);
             break;
-        case SELECTCHANNEL:
+        case CollectData:
+            switch (data & 0x0f)
+            {
+                case 1: 
+                    //'A'
+                    NOP(); 
+                    // read temperature
+                    break;
+                case 2:
+                    //'B'
+                    NOP();
+                    // read humidity
+                    break;
+                case 3: //Reset(); break;
+                default://printf("Illegal command!!\r\n"); 
+                    break;
+            }
+            break;
         case SELECTEXPENDCHANNEL:
             //SelectedChannelNo = data & 0x3f;
             //SelectChannel(SelectedChannelNo);
