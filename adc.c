@@ -27,12 +27,13 @@ void init_port_adc0(void)
 }
 #else
 {
-    //because of hardware fault, adc0 connects to RP2
+    //because of hardware fault in demo board, adc0 connects to RP2
     Clr_Bit(PORTF, ADC0);   //PORTF = 0X00;//AD采集口 ADC0 设置为输入
     Clr_Bit(DDRF, ADC0);    //DDRF = 0X00;
 
     //ADMUX = 0x00;   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
-    ADMUX |= (1 << REFS1) | (1 << REFS0);   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
+    //ADMUX |= (1 << REFS1) | (1 << REFS0);   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
+    ADMUX = (1 << REFS1) | (1 << REFS0);   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
     //ADMUX &= 0xE0;      //BIT[4:0]: choose ADC0
     choose_ADC_channel(0x00);   //BIT[4:0]: choose ADC0
     Clr_Bit(ADMUX, ADLAR);  // BIT(ADLAR)=0:right adjusted result
@@ -126,9 +127,9 @@ UINT16 ad_conversion_polling(void)//电压采集函数
     Clr_Bit(ADCSRA, ADFR);  //ADCSRA &= ~BIT(ADFR);
     Clr_Bit(ADCSRA, ADIE);  //ADC interrupt disable: 0
 #endif
-    while(i<(1<<exp_index))
+    //while(i<(1<<exp_index))
+    for (i=0;i<(1 << exp_index); i++)
     {
-        i++;
         ad_start_conversion();
         while (!(ADCSRA&(BIT(ADIF))));//等待转换结束, 查询方式
         Set_Bit(ADCSRA, ADIF);  //ADIF在ADC转换结束后置位, write ADIF to '1' to clear ADIF.
@@ -144,7 +145,7 @@ UINT16 ad_conversion_polling(void)//电压采集函数
     return dataADC;
 }
 
-UINT16 ad_change(UINT16 value)//电压转换函数
+UINT16 dataADC_HEX2mv(UINT16 value)//电压转换函数
 {
     INT32 x;
     UINT16 y;
@@ -168,7 +169,7 @@ void timer0_ovf_isr_adc0(void)
             ad = 0;
             ad_data1 = ad_cat();
             printf("ad_data1 = %d", ad_data1);
-            ad_data2 = ad_change(ad_data1);
+            ad_data2 = dataADC_HEX2mv(ad_data1);
         }
         switch (i++)
         {
@@ -186,13 +187,15 @@ void timer0_ovf_isr_adc0(void)
 void collectADC0(void)
 {
     UINT16 dataADC;
-    NOP();
-    init_beep();
+    UINT16 dataADC_mv;
     init_port_adc0();
+    init_beep();
     beep();
     SEI();
     dataADC=ad_conversion_polling();
-    printf("ADC0 result is %d", dataADC);
+    printf("ADC0 HEX result is %d\r\n", dataADC);
+    dataADC_mv = dataADC_HEX2mv(dataADC);
+    printf("ADC0 mv result is %d mv\r\n", dataADC_mv);
 
 
 }

@@ -15,6 +15,12 @@
 //#include "peripherals.h"
 #include "fifo.h"
 
+
+extern BOOL IsEmpty(struct Fifo *this);
+extern BOOL AddFifo(struct Fifo *this, UINT8 data);
+extern UINT8 FetchFifo(struct Fifo *this);
+extern void ClearFifo(struct Fifo *this);
+
 //extern void timer0_init(void);
 //extern void timer0_ovf_isr(void);
 //extern void port_init_timer0(void);
@@ -34,6 +40,7 @@ extern void init_SEG4(void);
 extern void test_timer2(void);
 extern void uart1_processCmd(void);
 extern void init_uart0(void);
+extern void test_timer1(void);
 
 #ifdef _DUMMY_CODE
 extern void test_char2int(void);
@@ -55,10 +62,21 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 }
 
 
+void init_vars(void)
+{
+    SystemTickCount = 0;
+    CommandFifo.IsEmpty = IsEmpty;
+    CommandFifo.AddFifo = AddFifo;
+    CommandFifo.FetchFifo = FetchFifo;
+    CommandFifo.ClearFifo = ClearFifo;
+    (*CommandFifo.ClearFifo)(&CommandFifo);
+}
+
 
 void main(void)
 {
     CLI();  //disable all interrupt until initialization is done
+    init_vars();
     init_beep();
     init_led();
     init_uart0();   //enable printf
@@ -72,7 +90,8 @@ void main(void)
     //test_usr();
     //uart1_processCmd();
     //main_adc1();
-    collectADC0();
+    test_timer1();
+    //collectADC0();
 
 
     

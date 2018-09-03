@@ -15,8 +15,9 @@
 /***********************************宏定义**********************************/
 
 #define UART0_BAUD 19200	 //UART0_BAUD rate 
+#define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
 #define UART1_BAUD 9600	 //UART1_BAUD rate
-#define MYUBRR (CPU_CLK/16/UART1_BAUD-1)
+#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
@@ -50,14 +51,17 @@ Returns: :
 ****************************************************************************/
 void uart0_init_register(void)  //初始化COM0
 {
+    UINT16 ubrr = UART0_UBRR;
     UCSR0B = 0x00; //初始化
     UCSR0A = 0x00; //初始化, *U2X0=0:非倍速模式
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);//8bit
     Clr_Bit(UCSR0C, USBS0);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
     //U2X = 0
-    UBRR0L = (CPU_CLK /  (UART0_BAUD * 16) - 1) % 256;     //51
-    UBRR0H = (CPU_CLK / (UART0_BAUD * 16)  - 1) / 256;     //0, UART0_BAUD rate =250000, 0.0% error
+    UBRR0L = (UINT8)(ubrr);
+    UBRR0H = (UINT8) (ubrr >> 8);
+    //UBRR0L = (CPU_CLK /  (UART0_BAUD * 16) - 1) % 256;     //
+    //UBRR0H = (CPU_CLK / (UART0_BAUD * 16)  - 1) / 256;     //
 #else   
     //atmega64, 128
     UBRR0L = (CPU_CLK / 16 / (UART0_BAUD + 1)) % 256;     //52
@@ -128,7 +132,9 @@ void uart0_init_devices(void)
     CLI(); //关闭所有中断
     XDIV = 0x00;
     XMCRA = 0x00;
+#ifndef _ATMEGA128A
     MCUCR = 0x00;
+#endif // _ATMEGA128A
     EICRA = 0x00;
     EICRB = 0x00;
     EIMSK = 0x00;
@@ -409,7 +415,11 @@ void uart1_init_devices(void)
     CLI(); //关闭所有中断
     XDIV = 0x00;
     XMCRA = 0x00;
+#ifndef _ATMEGA128A
     MCUCR = 0x00;
+#endif // _ATMEGA128A
+
+    
     EICRA = 0x00;
     EICRB = 0x00;
     EIMSK = 0x00;
@@ -489,7 +499,7 @@ Returns: :
 ****************************************************************************/
 void uart1_init_register(void)  //初始化COM0
 {
-    UINT16 ubrr = MYUBRR;
+    UINT16 ubrr = UART1_UBRR;
     UCSR1B = 0x00; //初始化
     UCSR1A = 0x00; //初始化, *U2X0=0:非倍速模式
     UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit

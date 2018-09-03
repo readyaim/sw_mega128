@@ -118,8 +118,13 @@ void init_watchdog(void)
 *******************************************************************************/
 void init_led(void)
 {
-    LED_PORT = 0xFF;    //HIGH,=Turn off LED
-    LED_DDR = 0xFF;     //OUT
+    //LED_PORT = 0xFF;    //HIGH,=Turn off LED
+    //LED_DDR = 0xFF;     //OUT
+    Set_Bit(LED_PORT, LED2);
+    Set_Bit(LED_DDR, LED2);
+    Set_Bit(LED_PORT, LED3);
+    Set_Bit(LED_DDR, LED3);
+    
 }
 
 /*******************************************************************************
