@@ -127,7 +127,6 @@ UINT16 ad_conversion_polling(void)//电压采集函数
     Clr_Bit(ADCSRA, ADFR);  //ADCSRA &= ~BIT(ADFR);
     Clr_Bit(ADCSRA, ADIE);  //ADC interrupt disable: 0
 #endif
-    //while(i<(1<<exp_index))
     for (i=0;i<(1 << exp_index); i++)
     {
         ad_start_conversion();
@@ -198,6 +197,23 @@ void collectADC0(void)
     printf("ADC0 mv result is %d mv\r\n", dataADC_mv);
 
 
+}
+/*******************************************************************************
+* Function:     get_data_adc0()
+* Arguments:
+* Return:        return the average ADC conversion data
+* Description:  read ADC0, and average in 10 samples(skip the obvious bad result).
+*******************************************************************************/
+
+UINT16 get_data_adc0(void)
+{
+	UINT16 dataADC;
+	UINT16 dataADC_mv;
+	dataADC = ad_conversion_polling();
+	//printf("ADC0 HEX result is %d\r\n", dataADC);
+	dataADC_mv = dataADC_HEX2mv(dataADC);
+	printf("ADC0 mv result is %d mv\r\n", dataADC_mv);
+	return dataADC_mv;
 }
 
 void collectADC1(void)

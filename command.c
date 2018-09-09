@@ -6,10 +6,11 @@ extern void init_SEG4(void);
 extern void test_timer2(void);
 extern void uart1_init(void);
 extern void uart1_checkCMDPolling(void);
-extern void timer_ticker(void);
+extern void ticker_timer1_handler(void);
 extern void init_devices_timer1(void);
 extern void write_data2eeprom(dataInEEPROM_t *data2eeprom);
 extern void read_dataFromeeprom(UINT8 addOffset);
+extern void init_port_adc0(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -187,6 +188,7 @@ void ticker_processCmd(void)
 	init_SEG4();    //enable SEG4, can be run in main()
 	//test_timer2();  //enable timer2 ovf interrupt, can be run in main()
 	uart1_init();
+	init_port_adc0();
 	init_devices_timer1();
 	SEI();
 	while (1)
@@ -195,7 +197,7 @@ void ticker_processCmd(void)
 		if (!empty)
 			processCmd(FetchFifo(&CommandFifo));
 
-		timer_ticker();
+		ticker_timer1_handler();
 		uart1_checkCMDPolling();
 	}
 }

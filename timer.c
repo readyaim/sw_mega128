@@ -5,10 +5,7 @@
 //#define _DEBUG_TIMER1
 //#define _DEBUG_TIMER3
 
-/* Timer1 compA interrupt interval, in ms*/
-#define TICKERTIME 200
-#define CLKDIV 256
-#define TCNTVALUE (CPU_CLK*TICKERTIME/256/1000) 
+
 static UINT16 ext_counter = 0;	//static means only allow timer.c use global ext_counter
 extern UINT32 SystemTickCount;
 

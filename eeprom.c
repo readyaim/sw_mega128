@@ -61,9 +61,20 @@ UINT16 addr_read_eeprom = 0;
 void write_data2eeprom(dataInEEPROM_t *data2eeprom)
 {
 	UINT16 tmp;
+	UINT8 high8, low8;
 	tmp = data2eeprom->data;
-	EEPROM_write(addr_eeprom++, (UINT8)tmp);
+	printf("tmp is %x\r\n", tmp);
+	low8 = (UINT8)(tmp);
+	printf("low8 is %x\r\n", low8);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.year1);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.year);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.mon);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.day);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.hour);
+	EEPROM_write(addr_eeprom++, data2eeprom->time.min);
+	EEPROM_write(addr_eeprom++, low8);
 	EEPROM_write(addr_eeprom++, (UINT8)(tmp>>8));
+	addr_eeprom += 7;
 }
 
 /*******************************************************************************
@@ -76,9 +87,19 @@ void read_dataFromeeprom(UINT8 addOffset)
 {
 	UINT8 data;
 	UINT16 addr;
-	addr = (addr_read_eeprom) + addOffset-1;
-	data = EEPROM_read(addr);
-	printf("the data at %x is %d \r\n", addr, data);
+	if (addOffset >= 0x0E)
+	{
+		//reset addess
+		addr_read_eeprom = 0;
+		printf("get %x, reset addr_read_eeprom to %d", addOffset, addr_read_eeprom);
+	}
+	else
+	{
+		addr_read_eeprom += addOffset;
+	}
+	//addr = (addr_read_eeprom) + addOffset-1;
+	data = EEPROM_read(addr_read_eeprom);
+	printf("the data at %x is %d \r\n", addr_read_eeprom, data);
 }
 
 /*******************************************************************************

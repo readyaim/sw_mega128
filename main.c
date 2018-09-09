@@ -57,7 +57,7 @@ extern void collectADC0(void);
 UINT32 SystemTickCount;
 struct dataInEEPROM_t dataIneeprom, dataInRom_max, dataInRom_min;
 struct Fifo CommandFifo;
-struct TimeStamp_t timestamp;
+struct TimeStamp_t timeStampShot;
 
 BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 {
@@ -77,14 +77,14 @@ void init_vars(void)
 	initTime.year = 18;
 	initTime.mon = 9;
 	initTime.day = 8;
-	initTime.min = 14;
 	initTime.hour = 20;
+	initTime.min = 58;
 
 
     SystemTickCount = 0;
 	dataIneeprom.data = 0;
-	timestamp.time = initTime;
-	timestamp.tickeCounter = 0;
+	timeStampShot.time = initTime;
+	timeStampShot.tickeCounter = 0;
     CommandFifo.IsEmpty = IsEmpty;
     CommandFifo.AddFifo = AddFifo;
     CommandFifo.FetchFifo = FetchFifo;
@@ -100,6 +100,7 @@ void main(void)
     init_beep();
     init_led();
     init_uart0();   //enable printf
+	init_port_adc0();
 	printf("Start program! \r\n");
 	uart1_init();
     //main_uart0();

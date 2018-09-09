@@ -52,6 +52,17 @@ extern void beep(void);
 extern void delay_us(UINT16 microsecond);
 extern void delay_ms(UINT16 millisecond);
 
+/* timer.c Timer1 compA interrupt interval, in ms*/
+#define TICKERTIME 200
+#define CLKDIV 256
+#define TCNTVALUE (CPU_CLK*TICKERTIME/256/1000) 
+
+/* data_collection.c*/
+#define DAYTICKERTIME (12*60*60*1000/TICKERTIME)
+#define HOURTICKERTIME (60*60*1000/TICKERTIME)
+#define MINTICKERTIME (60*1000/TICKERTIME)
+//#define SECTICKERTIME (1000/TICKERTIME)
+
 
 #define Set_Bit(val, bitn)    (val |=(1<<(bitn))) 
 #define Clr_Bit(val, bitn)    (val&=~(1<<(bitn))) 
@@ -104,7 +115,7 @@ typedef struct TimeStamp_t {
 	Date_t time;
 	UINT32 tickeCounter;
 }TimeStamp_t;
-extern struct TimeStamp_t timestamp;
+extern struct TimeStamp_t timeStampShot;
 /* for debug only*/
 //#define _SPI_TX
 //#define _SPI_MASTER

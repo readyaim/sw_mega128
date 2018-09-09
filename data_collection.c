@@ -7,71 +7,126 @@
 
 #include "global.h"
 
-UINT8 ch_show = 'a';
-
-#if 0
-/*******************************************************************************
-* Function:      timer_handler()
-* Arguments:
-* Return:
-* Description:
-*******************************************************************************/
-UINT8 timer_handler()
-{
-
-	if 10s
-	{
-		get_data();	//or push get_data command to fifo
-	}
-		if 60s
-		{
-			1. remove max value
-			2. remove min value
-			3. average 4 remoains data
-			4. save to eeprom data struct in(time[], data[]) to buffer
-			5. start to EEPROM from buffer if buffer is not empty
-		}
-
-}
-#endif
-
-#if 1
 /*******************************************************************************
 * Function:      get_data()
-* Arguments:   
+* Arguments:
 * Return:		  data;
 * Description:   collect temp, humidity....data through ADC or I2C
 					   TODO
 *******************************************************************************/
 UINT16 get_data(void)
 {
+#ifdef _DATA_COLLECT_DEBUG
+	// for debug only
 	static UINT16 n = 0xA;
 	return n++;
+#else
+	//for ADC0 sampling
+	UINT16 data;
+	data = get_data_adc0();
+	return data;
+#endif // _DATA_COLLECT_DEBUG
+
+
 }
 
 /*******************************************************************************
 * Function:      get_time()
-* Arguments:   currentTickCout and timestamp
+* Arguments:   currentTickCout and timeStampShot
 * Return:		  newTime;
-* Description:   caculate Date_t time according to currentTickCount and timestamp.
-                       timestamp is updated through GPRS module, activated by server. (by url ???)
+* Description:   caculate Date_t time according to currentTickCount and timeStampShot.
+					   timeStampShot is updated through GPRS module, activated by server. (by url ???)
 					   TODO
 *******************************************************************************/
 Date_t get_time(UINT32 currentTickCout)
 {
+#ifdef _DATA_COLLECT_DEBUG
 	struct Date_t newTime;
-	newTime = timestamp.time;
+	newTime = timeStampShot.time;
 	newTime.min += 3;
 	newTime.hour += 2;
 	return newTime;
+#else
+	Date_t  newTime;
+	UINT32 tickCounterDiff = 0;
+	UINT32 tmp_day, tmp_hour, tmp_min;
+	if (currentTickCout >= timeStampShot.tickeCounter)
+	{
+		tickCounterDiff = currentTickCout - timeStampShot.tickeCounter;
+	}
+	else
+	{
+		//TODO, exception when tickcouter overflow.
+		tickCounterDiff = 4294967295 - timeStampShot.tickeCounter + currentTickCout;
+		//NOP();
+	}
+	newTime = timeStampShot.time;	//copy time to new time
+	//TODO caculate difference.
+
+	//1s: 5tick
+	//1min: 5*60 tick, 300
+	//1hour: 5*60*60 tick, 18000
+	//1day: 5*60*60*12, 216000
+	//1mon: 30*1day, 6,480,000
+	//1year: 77,760,000
+
+	if (tickCounterDiff < HOURTICKERTIME)
+	{
+		// tickerDiff is small, save the caculation
+		tmp_min = (tickCounterDiff) / MINTICKERTIME;
+		newTime.min += tmp_min;
+	}
+	else
+	{	//full calculation
+		tmp_day = tickCounterDiff / DAYTICKERTIME;
+		newTime.day += tmp_day;
+		tmp_hour = (tickCounterDiff % DAYTICKERTIME) / HOURTICKERTIME;
+		newTime.hour += tmp_hour;
+		tmp_min = (tickCounterDiff%HOURTICKERTIME) / MINTICKERTIME;
+		newTime.min += tmp_min;
+	}
+
+	if (newTime.min > 59)
+	{
+		newTime.min -= 60;
+		newTime.hour += 1;
+	}
+	else if (newTime.hour > 23)
+	{
+		newTime.hour -= 24;
+		newTime.day += 1;
+	}
+	else if (newTime.day > 30)
+	{
+		//TODO: day 30 or 31 a month???
+		newTime.day -= 30;
+		newTime.mon += 1;
+	}
+	else if (newTime.mon > 12)
+	{
+		newTime.mon -= 12;
+		newTime.year += 1;
+	}
+	else if (newTime.year > 99)
+	{
+		newTime.year -= 99;
+		newTime.year1 += 1;
+	}
+
+	//Update timeStampShot
+	timeStampShot.time = newTime;
+	timeStampShot.tickeCounter = currentTickCout;
+	return newTime;
+#endif
+
 }
 /*******************************************************************************
-* Function:      timer_ticker()
+* Function:      ticker_timer1_handler()
 * Arguments:
 * Return:
-* Description:
+* Description:  data collection handler
 *******************************************************************************/
-void timer_ticker(void)
+void ticker_timer1_handler(void)
 {
 	//1:0.2s, 50:10s, 300:1min, 3000: 10min
 	static UINT8 tick_divider = 50;
@@ -104,17 +159,19 @@ void timer_ticker(void)
 					else if (data[i] < mindata)
 						min_index = i;
 				}
-				//data[max_index] = 0;
-				//data[min_index] = 0;
+				data[max_index] = 0;
+				data[min_index] = 0;
 				for (i = 0; i <= 5; i++)
 				{
-					if (i != max_index && i != min_index)
+				//	if (i != max_index && i != min_index)
 						//sum, remove max/min
 						datasum += data[i];
 				}
 				//3. average 4 remoains data
 				//4. save to eeprom data struct in (time[], data[]) to buffer
 				dataIneeprom.data = (UINT16)(datasum >> 2);		//sum/4, and save it
+				//dataIneeprom.data = (UINT16)(datasum/4);		//sum/4, and save it
+				printf("datasum is %d, average is %d \r\n", datasum, dataIneeprom.data);
 				dataIneeprom.time = get_time(currentTickCount);			//save time, TODO
 
 				// TODO: save max and min, with time
@@ -147,8 +204,9 @@ void timer_ticker(void)
 			case 0:
 				/*get 1st data*/
 				data[data_index] = get_data();
+				printf("data[0] is collected as %d\r\n", data[data_index]);
 				data_index++;
-				printf("data[0] is collected\r\n");
+				
 
 				break;
 			default:
@@ -159,11 +217,11 @@ void timer_ticker(void)
 			//ch_show
 
 		}
-		
+
 	}
 }
 
 
 
-#endif
+
 
