@@ -14,7 +14,7 @@
 
 /***********************************ºê¶¨Òå**********************************/
 
-#define UART0_BAUD 19200	 //UART0_BAUD rate 
+#define UART0_BAUD 38400	 //UART0_BAUD rate 
 #define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
 #define UART1_BAUD 9600	 //UART1_BAUD rate
 #define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)
@@ -398,6 +398,12 @@ void uart1_checkCMDPolling(void)
         {
             AddFifo(&CommandFifo, ch);
         }
+		else if (ch >= 'a' && ch < 'o')
+		{
+			// (*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
+			AddFifo(&CommandFifo, ch);
+			printf("character %c is received\r\n", ch);
+		}
         if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
             RXC1_RD++;
         else

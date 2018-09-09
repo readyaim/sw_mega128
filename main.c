@@ -20,6 +20,7 @@ extern BOOL IsEmpty(struct Fifo *this);
 extern BOOL AddFifo(struct Fifo *this, UINT8 data);
 extern UINT8 FetchFifo(struct Fifo *this);
 extern void ClearFifo(struct Fifo *this);
+extern void ticker_processCmd(void);
 
 //extern void timer0_init(void);
 //extern void timer0_ovf_isr(void);
@@ -40,17 +41,23 @@ extern void init_SEG4(void);
 extern void test_timer2(void);
 extern void uart1_processCmd(void);
 extern void init_uart0(void);
+extern void uart1_init(void);
 extern void test_timer1(void);
+extern void test_EEPROM(void);
+
 
 #ifdef _DUMMY_CODE
 extern void test_char2int(void);
 extern void test_strcmp(void);
 extern void test_usr(void);
 extern void collectADC0(void);
+
 #endif // _DUMMY_CODE
 
 UINT32 SystemTickCount;
+struct dataInEEPROM_t dataIneeprom, dataInRom_max, dataInRom_min;
 struct Fifo CommandFifo;
+struct TimeStamp_t timestamp;
 
 BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 {
@@ -64,7 +71,20 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 
 void init_vars(void)
 {
+	struct Date_t initTime = {20,18,9,12,17,0};
+
+	initTime.year1 = 20;
+	initTime.year = 18;
+	initTime.mon = 9;
+	initTime.day = 8;
+	initTime.min = 14;
+	initTime.hour = 20;
+
+
     SystemTickCount = 0;
+	dataIneeprom.data = 0;
+	timestamp.time = initTime;
+	timestamp.tickeCounter = 0;
     CommandFifo.IsEmpty = IsEmpty;
     CommandFifo.AddFifo = AddFifo;
     CommandFifo.FetchFifo = FetchFifo;
@@ -80,6 +100,8 @@ void main(void)
     init_beep();
     init_led();
     init_uart0();   //enable printf
+	printf("Start program! \r\n");
+	uart1_init();
     //main_uart0();
     //main_uart1_loopback();
     //main_twi();
@@ -90,8 +112,10 @@ void main(void)
     //test_usr();
     //uart1_processCmd();
     //main_adc1();
-    test_timer1();
+    //test_timer1();
     //collectADC0();
+    //test_EEPROM();
+	ticker_processCmd();
 
 
     

@@ -4,7 +4,9 @@
 #include <AVRdef.h>
 #include <string.h>
 
-//type definition
+#ifndef GLOBAL_H
+#define GLOBAL_H
+
 #define UINT8 unsigned char
 #define INT8 signed char
 #define UINT16 unsigned int
@@ -29,13 +31,14 @@
 #define GENERAL 0
 #define ShowNumOnLED 3
 #define CollectData 4
+#define SAVE2EEPROM 5
+#define READEEPROM 6
 
 #define SETMEASUREMETHOD 1
 #define SELECTCHANNEL 2
 #define SELECTEXPENDCHANNEL 8
 
-#define MEASURECURRENT 5
-#define SETChannelCV 6
+
 #define SETCCPWM 7
 
 #define FifoLength 150
@@ -60,10 +63,48 @@ extern void delay_ms(UINT16 millisecond);
 
 extern BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay);
 extern void Delay(UINT32);
-//extern struct Fifo CommandFifo;
+extern struct Fifo CommandFifo;
+extern UINT32 SystemTickCount;
 
 
+typedef struct Fifo {
+	UINT8 fifodata[FifoLength];
+	UINT8 start;
+	UINT8 end;
+	BOOL(*IsEmpty)(struct Fifo*);
+	BOOL(*AddFifo)(struct Fifo *, UINT8);
+	UINT8(*FetchFifo)(struct Fifo *);
+	void(*ClearFifo)(struct Fifo *);
+}FIFO;
 
+
+typedef struct Date_t{
+	UINT8 year1;
+	UINT8 year;
+	UINT8 mon;
+	UINT8 day;
+	UINT8 hour;
+	UINT8 min;
+}Date_t;
+
+typedef struct dataInEEPROM_t {
+	Date_t time;
+	UINT16 data;
+
+}dataInEEPROM_t;
+
+typedef struct dataSeries_t {
+
+	UINT8 data;
+	UINT8 index;
+}dataSeries_t;
+extern struct dataInEEPROM_t dataIneeprom, dataInRom_max, dataInRom_min;
+
+typedef struct TimeStamp_t {
+	Date_t time;
+	UINT32 tickeCounter;
+}TimeStamp_t;
+extern struct TimeStamp_t timestamp;
 /* for debug only*/
 //#define _SPI_TX
 //#define _SPI_MASTER
@@ -86,6 +127,14 @@ extern void Delay(UINT32);
 //    float Avg;
 //    float Min;
 //}RESULT;
+
+
+#endif // !GLOBAL_H
+
+
+
+
+
 
 
 

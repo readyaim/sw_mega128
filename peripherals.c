@@ -1,3 +1,10 @@
+/****************************************************************************
+* File name: peripherals.c
+* Description: includes functions for LED, SEG, BEEP
+* Created: 20180901
+* Author: s.z.
+****************************************************************************/
+
 #include "global.h"
 #include "peripherals.h"
 
@@ -118,13 +125,8 @@ void init_watchdog(void)
 *******************************************************************************/
 void init_led(void)
 {
-    //LED_PORT = 0xFF;    //HIGH,=Turn off LED
-    //LED_DDR = 0xFF;     //OUT
-    Set_Bit(LED_PORT, LED2);
-    Set_Bit(LED_DDR, LED2);
-    Set_Bit(LED_PORT, LED3);
-    Set_Bit(LED_DDR, LED3);
-    
+    LED_PORT = 0xFF;    //HIGH,=Turn off LED
+    LED_DDR = 0xFF;     //OUT
 }
 
 /*******************************************************************************
@@ -148,6 +150,8 @@ void led_off(void)
 {
     Set_Bit(LED_PORT, LED2);
 }
+
+
 /*******************************************************************************
 * Function:  main_watchdog()
 * Arguments: 
@@ -173,3 +177,4 @@ void feed_watchdog(void)
 {
     WDR();
 }
+

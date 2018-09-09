@@ -2,16 +2,15 @@
 #include "peripherals.h"
 #include "fifo.h"
 
-#define _DEBUG_TIMER1
+//#define _DEBUG_TIMER1
 //#define _DEBUG_TIMER3
 
+/* Timer1 compA interrupt interval, in ms*/
+#define TICKERTIME 200
+#define CLKDIV 256
+#define TCNTVALUE (CPU_CLK*TICKERTIME/256/1000) 
 static UINT16 ext_counter = 0;	//static means only allow timer.c use global ext_counter
 extern UINT32 SystemTickCount;
-extern void init_led(void);
-
-UINT8 flagA=0;
-UINT8 flagB = 0;
-
 
 /*******************************************************************************
 * Function:  timer0_init()
@@ -46,32 +45,33 @@ void timer1_init(void)
     TCCR1A = 0x00;  //disconnect comparator OCnA/B/C to IO, PWM
     TCCR1C = 0x00;  // force output compare for channel A/B/C
 #ifdef _DEBUG_TIMER1
-    //TCCR1B = (1 << CS10 | 1<<WGM12);  //clock select b'001', CPU_CLK/1
-    TCCR1B = 0x00;  // stop
+    TCCR1B = (1 << CS10 | 1<<WGM12);  //clock select b'001', CPU_CLK/1
+    //TCCR1B = (1 << CS10 );  //clock select b'001', CPU_CLK/1
     TCNT1H = 0x00;  //
     TCNT1L = 0x00;  //
     OCR1AH = 0x18; //设置 TC1 的 输出比较寄存器A 高8位值
     OCR1AL = 0x6A; //设置 TC1 的 输出比较寄存器A 低8位值
-    //OCR1BH = 0x38; //设置 TC1 的 输出比较寄存器B 高8位值
-    //OCR1BL = 0x00; //设置 TC1 的 输出比较寄存器B 低8位值
-    //OCR1CH = 0x08; //设置 TC1 的 输出比较寄存器B 高8位值
-    //OCR1CL = 0xD4; //设置 TC1 的 输出比较寄存器B 低8位值
+    //OCR1BH = 0x00; //设置 TC1 的 输出比较寄存器B 高8位值
+    //OCR1BL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
+    //OCR1CH = 0x00; //设置 TC1 的 输出比较寄存器B 高8位值
+    //OCR1CL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
     //Set_Bit(TIMSK, TOIE1);  //enable timer1 overflow interrupt
     Set_Bit(TIMSK, OCIE1A);  //enable timer1 overflow interrupt
     //Set_Bit(TIMSK, OCIE1B);  //enable timer1 overflow interrupt
     //Set_Bit(ETIMSK, OCIE1C);  //enable timer1 overflow interrupt
-    //TCCR1B = (1 << CS12 | 1 << CS10);  //clock select b'001', CPU_CLK/1
-    TCCR1B = (1 << CS12 | 1 << WGM12);  //clock select b'001', CPU_CLK/1
 #else
-    TCCR1B = 0x00;
-    TCNT1H = 0xE7;  //Set TC1 counter TCNT1 = 0xE796, div=64,  counter=0xFFFF-0xe796=6250，fosc=8MHz, 0.2s
-    TCNT1L = 0x96;  //Set TC1 counter TCNT1 = 0xCF2C, div=64,  counter=0xFFFF-0xCF2C=12500，fosc=8MHz, 0.1s
-    //OCR1AH = 0x1C; //设置 TC1 的 输出比较寄存器A 高8位值
-    //OCR1AL = 0x20; //设置 TC1 的 输出比较寄存器A 低8位值
-    //OCR1BH = 0x1C; //设置 TC1 的 输出比较寄存器B 高8位值
+    TCCR1B = (1 << CS12 | 1<<WGM12);  //clock select b'100', CPU_CLK/256
+    TCNT1H = 0x00;  //Set TC1 counter TCNT1 = 0xE796, div=64,  counter=0xFFFF-0xe796=6250，fosc=8MHz, 0.2s
+    TCNT1L = 0x00;  //Set TC1 counter TCNT1 = 0xCF2C, div=64,  counter=0xFFFF-0xCF2C=12500，fosc=8MHz, 0.1s
+ //   OCR1AH = 0x18; //设置 TC1 的 输出比较寄存器A 高8位值
+  //  OCR1AL = 0x6A; //设置 TC1 的 输出比较寄存器A 低8位值
+ 	OCR1AH = (UINT8)(TCNTVALUE >> 8);
+	OCR1AL = (UINT8)(TCNTVALUE);
+
+	//OCR1BH = 0x1C; //设置 TC1 的 输出比较寄存器B 高8位值
     //OCR1BL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
-    Set_Bit(TIMSK, TOIE1);  //enable timer1 overflow interrupt
-    TCCR1B = (1 << CS12 | 1 << WGM12);  //clock select b'100', CPU_CLK/256
+    //Set_Bit(TIMSK, TOIE1);  //enable timer1 overflow interrupt
+	Set_Bit(TIMSK, OCIE1A);  //enable timer1 overflow interrupt
 #endif // !_DEBUG_TIMER1    
     
     //OCR1BH = 0x1C; //设置 TC1 的 输出比较寄存器B 高8位值
@@ -195,8 +195,8 @@ void timer0_ovf_isr(void)
 void timer1_ovf_isr(void)
 {
 #ifdef _DEBUG_TIMER1
-    TCNT1H = 0x00;  //设置 TC1 的 计数寄存器 高8位值，基于7.3728M晶振
-    TCNT1L = 0x00;  //设置 TC1 的 计数寄存器 低8位值，基于7.3728M晶振
+    TCNT1H = 0xFF;  //设置 TC1 的 计数寄存器 高8位值，基于7.3728M晶振
+    TCNT1L = 0xE0;  //设置 TC1 的 计数寄存器 低8位值，基于7.3728M晶振
 #else
     TCNT1H = 0xE7;  //Set TC1 counter TCNT1 = 0xE796, div=64,  counter=0xFFFF-0xe796=6250，fosc=8MHz, 0.2s
     TCNT1L = 0x96;  //Set TC1 counter TCNT1 = 0xCF2C, div=64,  counter=0xFFFF-0xCF2C=12500，fosc=8MHz, 0.1s
@@ -265,15 +265,15 @@ void timer3_ovf_isr(void)
 
 
 /*******************************************************************************
-* Function:  timer0_compA_isr()
+* Function:  timer0_comp_isr()
 * Arguments: 
 * Return: 
-* Description:  timer0比较器A中断服务子程序
+* Description:  timer0比较器中断服务子程序
 *******************************************************************************/
-#pragma interrupt_handler timer0_compA_isr:iv_TIMER0_COMPA
-void timer0_compA_isr(void)
+#pragma interrupt_handler timer0_comp_isr:iv_TIMER0_COMPA
+void timer0_comp_isr(void)
 {
-    SystemTickCount++;
+	NOP();	// SystemTickCount++;
     // LEDPWM=0;
     // LEDPWM=LED_Lumin[(SystemTickCount>>(LED_Status))&0x1f];
 }
@@ -286,36 +286,22 @@ void timer0_compA_isr(void)
 #pragma interrupt_handler timer1_compA_isr:iv_TIMER1_COMPA
 void timer1_compA_isr(void)
 {
-    SystemTickCount++;
-    
-    //if (flagA == 0)
-    //{
-    //    Set_Bit(LED_PORT, LED2);
-    //    flagA = 1;
-    //}
-    //else
-    //{
-    //    Clr_Bit(LED_PORT, LED2);
-    //    flagA = 0;
-    //}
-    //beep();
+	SystemTickCount++;
     // LEDPWM=0;
     // LEDPWM=LED_Lumin[(SystemTickCount>>(LED_Status))&0x1f];
 }
 
 /*******************************************************************************
-* Function:  timer1_comp_isr()
+* Function:  timer1_compB_isr()
 * Arguments:
 * Return:
-* Description:  timer1比较器中断服务子程序
+* Description:  timer1比较器B中断服务子程序
 *******************************************************************************/
 #pragma interrupt_handler timer1_compB_isr:iv_TIMER1_COMPB
 void timer1_compB_isr(void)
 {
     NOP();
     NOP();
-    beep();
-        
     // LEDPWM=0;
     // LEDPWM=LED_Lumin[(SystemTickCount>>(LED_Status))&0x1f];
 }
@@ -331,20 +317,23 @@ void timer1_compC_isr(void)
 {
     NOP();
     NOP();
-    if (flagB == 0)
-    {
-        Clr_Bit(LED_PORT, LED3);
-        flagB = 1;
-    }
-    else
-    {
-        Set_Bit(LED_PORT, LED3); 
-        flagB = 0;
-    }
     // LEDPWM=0;
     // LEDPWM=LED_Lumin[(SystemTickCount>>(LED_Status))&0x1f];
 }
 
+/******TIMER 0 Interrupt**********/
+// call this routine to initialize all peripherals
+/*******************************************************************************
+* Function:  init_LED_port()
+* Arguments:
+* Return:
+* Description:  initiate LED for timer0 test
+*******************************************************************************/
+void init_LED_port(void)
+{
+    Set_Bit(PORTF, LED2);
+    Set_Bit(DDRF, LED2);
+}
 /*******************************************************************************
 * Function:  init_devices_timer0()
 * Arguments:
@@ -364,7 +353,7 @@ void init_devices_timer0(void)
     NOP();
     NOP();
     NOP();
-    init_led();
+    init_LED_port();
     timer0_init();
 }
 
@@ -408,7 +397,7 @@ void init_devices_timer2(void)
     NOP();
     NOP();
     NOP();
-    init_led();
+    init_LED_port();
     timer2_init();
 }
 
@@ -485,7 +474,6 @@ void test_timer0(void)
 void test_timer1(void)
 {
     CLI();
-    init_led();
     init_devices_timer1();
     beep();
 #ifndef _ATMEGA128A

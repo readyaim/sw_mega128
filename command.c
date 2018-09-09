@@ -6,6 +6,10 @@ extern void init_SEG4(void);
 extern void test_timer2(void);
 extern void uart1_init(void);
 extern void uart1_checkCMDPolling(void);
+extern void timer_ticker(void);
+extern void init_devices_timer1(void);
+extern void write_data2eeprom(dataInEEPROM_t *data2eeprom);
+extern void read_dataFromeeprom(UINT8 addOffset);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -61,13 +65,17 @@ void processCmd(UINT8 data)
                     break;
             }
             break;
-        case SELECTEXPENDCHANNEL:
+        case SAVE2EEPROM:
             //SelectedChannelNo = data & 0x3f;
             //SelectChannel(SelectedChannelNo);
             //printf("Switch to Channel %d\r\n", SelectedChannelNo);
             ////		 sprintf(str,"C %u",SelectedChannelNo);
             ////		 PronunciationString(str);
+			write_data2eeprom(&dataIneeprom);
             break;
+		case READEEPROM:
+			read_dataFromeeprom(data&0xF);
+			break;
         case SETMEASUREMETHOD:
             if (data & 0x10) 
             {
@@ -105,24 +113,8 @@ void processCmd(UINT8 data)
                 }
             }
             break;
-        case MEASURECURRENT:
-            /*MeasurePeriod = data & 0x1f;
-            if (MeasurePeriod == 0x10) Analyse();
-            printf(" _______________________________________________ \r\n");
-            printf("|Channel %4u:%s, Test period %6.2fs...|\r\n", SelectedChannelNo, ChannelName, (float)(1 << (MeasurePeriod)) / 100);
-            printf("|_______________________________________________|__________________________\r\n");
-            printf("|Range|  Sensor |Res(mA)|CaliResult|Counts|absMax(mA)| Avg(mA)  |absMin(mA)|\r\n");
-            result = Measure(1 << (MeasurePeriod));
-            printf(" -------------------------------------------------------------------------- \r\n");*/
-            //		 if (result.Max<15) result=Measure(1<<(MeasurePeriod),1);
-            //		 sprintf(str,"B, C %u, M %.3fA,a %.3fA, m %.3fA",\
-            //		 SelectedChannelNo, result.Max,result.Avg,result.Min);
-            //		 PronunciationString(str);
-            break;
-        case SETChannelCV:
-            /*SetCVPWM(data & 0x1f);
-            printf("CVPWM %u\r\n", data & 0x1f);*/
-            break;
+        
+
         case SETCCPWM:
             //AdjustCCPWM(data & 0x1f);
             break;
@@ -180,4 +172,30 @@ void uart1_processCmd(void)
         }*/
         uart1_checkCMDPolling();
     }
+}
+/*******************************************************************************
+* Function:     ticker_processCmd()
+* Arguments:
+* Return:
+* Description: test ticker_time() 
+*******************************************************************************/
+void ticker_processCmd(void)
+{
+	int i = 0;
+	BOOL empty;
+	CLI();
+	init_SEG4();    //enable SEG4, can be run in main()
+	//test_timer2();  //enable timer2 ovf interrupt, can be run in main()
+	uart1_init();
+	init_devices_timer1();
+	SEI();
+	while (1)
+	{
+		empty = IsEmpty(&CommandFifo);
+		if (!empty)
+			processCmd(FetchFifo(&CommandFifo));
+
+		timer_ticker();
+		uart1_checkCMDPolling();
+	}
 }
