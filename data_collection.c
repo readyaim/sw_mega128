@@ -7,6 +7,10 @@
 
 #include "global.h"
 
+//#define _DATA_COLLECT_DEBUG
+//enum TransIntervalMode_t transInterval = 5;
+UINT8 transInterval = 3;
+
 /*******************************************************************************
 * Function:      get_data()
 * Arguments:
@@ -40,13 +44,16 @@ UINT16 get_data(void)
 *******************************************************************************/
 Date_t get_time(UINT32 currentTickCout)
 {
+	/*
 #ifdef _DATA_COLLECT_DEBUG
 	struct Date_t newTime;
 	newTime = timeStampShot.time;
 	newTime.min += 3;
 	newTime.hour += 2;
 	return newTime;
+
 #else
+*/
 	Date_t  newTime;
 	UINT32 tickCounterDiff = 0;
 	UINT32 tmp_day, tmp_hour, tmp_min;
@@ -117,9 +124,20 @@ Date_t get_time(UINT32 currentTickCout)
 	timeStampShot.time = newTime;
 	timeStampShot.tickeCounter = currentTickCout;
 	return newTime;
-#endif
-
+//#endif
 }
+
+/*******************************************************************************
+* Function:      get_addr()
+* Arguments:
+* Return:
+* Description:  calc address offset with Time
+*******************************************************************************/
+UINT16 get_addr(Date_t *time, TimeStamp_t *timestamp)
+{
+	NOP();
+}
+
 /*******************************************************************************
 * Function:      ticker_timer1_handler()
 * Arguments:
@@ -137,6 +155,7 @@ void ticker_timer1_handler(void)
 	UINT32 currentTickCount = 0, TickCount = 0;
 	UINT32 datasum = 0;
 	static UINT32 lastTickCount = 0xFFFF;
+	static UINT32 intervalcounter = 0;
 
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
 	if (currentTickCount % tick_divider == 0)
@@ -150,6 +169,7 @@ void ticker_timer1_handler(void)
 				/*get 3rd data*/
 				data[data_index] = get_data();
 				data_index = 0;
+				intervalcounter += 1;
 				//1. remove max value
 				//2. remove min value
 				for (i = 0; i <= 5; i++)
@@ -168,18 +188,40 @@ void ticker_timer1_handler(void)
 						datasum += data[i];
 				}
 				//3. average 4 remoains data
-				//4. save to eeprom data struct in (time[], data[]) to buffer
-				dataIneeprom.data = (UINT16)(datasum >> 2);		//sum/4, and save it
-				//dataIneeprom.data = (UINT16)(datasum/4);		//sum/4, and save it
-				printf("datasum is %d, average is %d \r\n", datasum, dataIneeprom.data);
-				dataIneeprom.time = get_time(currentTickCount);			//save time, TODO
+				//4. save to eeprom data struct in (time, data) to buffer
+				dataInRom_g.data = (UINT16)(datasum >> 2);		//sum/4, and save it
+				//dataInRom_g.data = (UINT16)(datasum/4);		//sum/4, and save it
+				printf("datasum is %d, average is %x \r\n", datasum, dataInRom_g.data);
+				dataInRom_g.time = get_time(currentTickCount);			//save time, TODO
+				// 5. save max and min, with time
+				// TODO
+				//dataInRom_max_g, dataInRom_min_g
+				if (dataInRom_g.data > dataInRom_max_g.data)
+				{
+					dataInRom_max_g = dataInRom_g;
+					//(*CommandFifo.AddFifo)(&CommandFifo, 0x51);	//fifo cmd, write max value to eeprom
+					//TODO add 0x51 command
+				}
+				if (dataInRom_g.data < dataInRom_min_g.data)
+				{
+					dataInRom_min_g = dataInRom_g;
+					//(*CommandFifo.AddFifo)(&CommandFifo, 0x52);	//fifo cmd, write min value to eeprom
+					//TODO add 0x52 command
+				}
 
-				// TODO: save max and min, with time
-				//dataInRom_max, dataInRom_min
+				//6. Save the result to eeprom, according to transInterval
+				/*
+				//if (currentTickCount % (transInterval * 300) == 0)
+				//if (currentTickCount % 600 ==0)
+				if (intervalcounter % 2==0)
+				{
+					// TODO: Possible to miss 1 tick. need to modify to be robust
+					
+					(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
+					printf("fifo cmd 0x50: write eeprom commands\r\n");
+				}
+				*/
 
-				//5. start to EEPROM from buffer if buffer is not empty
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands
-				printf("fifo cmd 0x50 is written\r\n");
 				break;
 			case 4:
 				/*get 2nd data*/
@@ -215,7 +257,13 @@ void ticker_timer1_handler(void)
 			}
 			//get_data();
 			//ch_show
-
+			if (currentTickCount % (transInterval * 300) == 0)
+			{
+				// TODO: Possible to miss 1 tick. need to modify to be robust
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
+				printf("fifo cmd 0x50: write eeprom commands\r\n");
+				
+			}
 		}
 
 	}

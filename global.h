@@ -57,12 +57,29 @@ extern void delay_ms(UINT16 millisecond);
 #define CLKDIV 256
 #define TCNTVALUE (CPU_CLK*TICKERTIME/256/1000) 
 
-/* data_collection.c*/
+/* data_collection.h start*/
 #define DAYTICKERTIME (12*60*60*1000/TICKERTIME)
 #define HOURTICKERTIME (60*60*1000/TICKERTIME)
 #define MINTICKERTIME (60*1000/TICKERTIME)
-//#define SECTICKERTIME (1000/TICKERTIME)
 
+
+
+
+//#define SECTICKERTIME (1000/TICKERTIME)
+/* data_collection.h end*/
+
+
+/* eeprom.h start*/
+#define EEPROM_DATA_SIZE 16
+#define START_ADDR_EEPROM (0x0000)
+#define END_ADDR_EEPROM 0X3FFF
+#define MAX_DATA_ADDR_EEPPROM 0
+#define MIN_DATA_ADDR_EEPPROM EEPROM_DATA_SIZE
+
+//#define TEMP_START_ADDR_EEPROM 0x0000
+//#define TEMP_END_ADDR_EEPROM 0x1FFF
+
+/* eeprom.h end*/
 
 #define Set_Bit(val, bitn)    (val |=(1<<(bitn))) 
 #define Clr_Bit(val, bitn)    (val&=~(1<<(bitn))) 
@@ -109,13 +126,31 @@ typedef struct dataSeries_t {
 	UINT8 data;
 	UINT8 index;
 }dataSeries_t;
-extern struct dataInEEPROM_t dataIneeprom, dataInRom_max, dataInRom_min;
+extern struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 
 typedef struct TimeStamp_t {
 	Date_t time;
 	UINT32 tickeCounter;
 }TimeStamp_t;
 extern struct TimeStamp_t timeStampShot;
+
+/*
+enum TransIntervalMode_t {
+	min5 = 3,
+	min10 = 10,
+	min30 = 30,
+	min60 = 60
+};
+*/
+/*typedef struct TimeAddr_t {
+	Date_t time;
+	UINT16 addr;
+	UINT8 size;		//2 bytes, might be possibly removed later
+	UINT8 grid;
+}TimeAddr_t;
+*/
+
+
 /* for debug only*/
 //#define _SPI_TX
 //#define _SPI_MASTER

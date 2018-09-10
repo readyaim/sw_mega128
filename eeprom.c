@@ -7,7 +7,8 @@
 
 #include "global.h"
 
-struct dataInEEPROM_t dataInRom;
+
+
 
 /*******************************************************************************
 * Function:      EEPROM_read()
@@ -49,8 +50,61 @@ void EEPROM_write(UINT16 uiAddress, UINT8 ucData)
     EECR |= (1 << EEWE);
 }
 
-UINT16 addr_eeprom = 0;
-UINT16 addr_read_eeprom = 0;
+UINT16 addr_write_eeprom = START_ADDR_EEPROM;
+UINT16 addr_read_eeprom = START_ADDR_EEPROM;
+
+/*******************************************************************************
+* Function:     write_Time2eeprom()
+* Arguments:  Date_t *time
+					 UINT16 addr
+* Return:
+* Description: write time to eeprom
+*******************************************************************************/
+void write_Time2eeprom( UINT16 addr, Date_t *time)
+{
+	EEPROM_write(addr++, time->year1);
+	EEPROM_write(addr++, time->year);
+	EEPROM_write(addr++, time->mon);
+	EEPROM_write(addr++, time->day);
+	EEPROM_write(addr++, time->hour);
+	EEPROM_write(addr, time->min);
+}
+
+/*******************************************************************************
+* Function:     read_TimeIneeprom()
+* Arguments:  Date_t *time
+					 UINT16 addr
+* Return:
+* Description: read time from eeprom, save the result to *time
+*******************************************************************************/
+void read_TimeIneeprom(Date_t *time, UINT16 addr)
+{
+	time->year1 = EEPROM_read(addr++);
+	time->year = EEPROM_read(addr++);
+	time->mon = EEPROM_read(addr++);
+	time->day = EEPROM_read(addr++);
+	time->hour = EEPROM_read(addr++);
+	time->min = EEPROM_read(addr);
+}
+
+/*******************************************************************************
+* Function:     write_adc0_to_eeprom()
+* Arguments:  Date_t *time
+UINT16 addr
+* Return:
+* Description: write time to eeprom
+*******************************************************************************/
+void write_adc0_to_eeprom(UINT16 addr, dataInEEPROM_t *data2eeprom)
+{
+	EEPROM_write(addr++, data2eeprom->time.year1);
+	EEPROM_write(addr++, data2eeprom->time.year);
+	EEPROM_write(addr++, data2eeprom->time.mon);
+	EEPROM_write(addr++, data2eeprom->time.day);
+	EEPROM_write(addr++, data2eeprom->time.hour);
+	EEPROM_write(addr++, data2eeprom->time.min);
+	EEPROM_write(addr++, (UINT8)(data2eeprom->data));
+	EEPROM_write(addr++, (UINT8)(data2eeprom->data >> 8));
+}
 
 /*******************************************************************************
 * Function:     write_data2eeprom()
@@ -58,40 +112,113 @@ UINT16 addr_read_eeprom = 0;
 * Return:
 * Description:  write data to eeprom, MSB in low address
 *******************************************************************************/
-void write_data2eeprom(dataInEEPROM_t *data2eeprom)
+void write_data2eeprom(void)
 {
+	/*
 	UINT16 tmp;
 	UINT8 high8, low8;
 	tmp = data2eeprom->data;
 	printf("tmp is %x\r\n", tmp);
 	low8 = (UINT8)(tmp);
 	printf("low8 is %x\r\n", low8);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.year1);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.year);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.mon);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.day);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.hour);
-	EEPROM_write(addr_eeprom++, data2eeprom->time.min);
-	EEPROM_write(addr_eeprom++, low8);
-	EEPROM_write(addr_eeprom++, (UINT8)(tmp>>8));
-	addr_eeprom += 7;
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.year1);
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.year);
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.mon);
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.day);
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.hour);
+	EEPROM_write(addr_write_eeprom++, data2eeprom->time.min);
+	EEPROM_write(addr_write_eeprom++, low8);
+	EEPROM_write(addr_write_eeprom++, (UINT8)(tmp>>8));
+	
+	write_Time2eeprom(addr_write_eeprom, &dataInRom_max_g.time);
+	*/
+
+	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_g);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_max_g);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_min_g);
+	addr_write_eeprom += 8;
+
+	//TODO: solve addr_write_eeprom overflow
+	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE)
+	{
+		addr_write_eeprom = START_ADDR_EEPROM;
+	}
 }
 
 /*******************************************************************************
-* Function:     read_dataFromeeprom()
+* Function:     read_dataIneeprom()
+* Arguments:  uiAddress: address, *data2eeprom: the point of data to be saved
+* Return:
+* Description:  read from eeprom at uiAddress, and save the data to *data2eeprom
+*******************************************************************************/
+void read_dataIneeprom(UINT16 uiAddress, dataInEEPROM_t *data2eeprom)
+{
+	UINT16 tmp;
+	UINT8 high8, low8;
+	data2eeprom->time.year1 = EEPROM_read(uiAddress++);
+	data2eeprom->time.year = EEPROM_read(uiAddress++);
+	data2eeprom->time.mon = EEPROM_read(uiAddress++);
+	data2eeprom->time.day = EEPROM_read(uiAddress++);
+	data2eeprom->time.hour = EEPROM_read(uiAddress++);
+	data2eeprom->time.min = EEPROM_read(uiAddress++);
+	low8 = EEPROM_read(uiAddress++);
+	tmp = EEPROM_read(uiAddress++);
+	data2eeprom->data = ((tmp << 8) | low8);
+	printf("data read from eepprom is %x", data2eeprom->data);
+	
+}
+/*******************************************************************************
+* Function:     write_extremeData2eeprom()
+* Arguments:  dataInEEPROM_t *dataInRom_max_g, 
+					 UINT8 para: 1=adc0 max; 2=adc1 min.
+* Return:
+* Description: write extreme data to eeprom
+*******************************************************************************/
+void write_extremeData2eeprom(dataInEEPROM_t *dataInRom_extreme, UINT8 para)
+{
+	UINT16 addr;
+	if (para == 1)
+	{
+		addr = MAX_DATA_ADDR_EEPPROM;
+	}
+	else if (para == 2)
+	{
+		addr = MIN_DATA_ADDR_EEPPROM;
+	}
+	write_Time2eeprom(addr, &(dataInRom_extreme->time));
+	addr += 6;
+	/*
+	EEPROM_write(addr++, dataInRom_extreme->time.year1);
+	EEPROM_write(addr++, dataInRom_extreme->time.year);
+	EEPROM_write(addr++, dataInRom_extreme->time.mon);
+	EEPROM_write(addr++, dataInRom_extreme->time.day);
+	EEPROM_write(addr++, dataInRom_extreme->time.hour);
+	EEPROM_write(addr++, dataInRom_extreme->time.min);
+	*/
+	EEPROM_write(addr++, (UINT8)(dataInRom_extreme->data));
+	EEPROM_write(addr++, (UINT8)(dataInRom_extreme->data >> 8));
+	
+}
+
+
+
+/*******************************************************************************
+* Function:     read_eepromCtrledByUART1()
 * Arguments:  addOffset
 * Return:
 * Description:  read eeprom data at 0x0000+addOffset , and printf to UART0
 *******************************************************************************/
-void read_dataFromeeprom(UINT8 addOffset)
+void read_eepromCtrledByUART1(UINT8 addOffset)
 {
 	UINT8 data;
 	UINT16 addr;
-	if (addOffset >= 0x0E)
+	if (addOffset >= 0x0F)
 	{
 		//reset addess
-		addr_read_eeprom = 0;
-		printf("get %x, reset addr_read_eeprom to %d", addOffset, addr_read_eeprom);
+		addr_read_eeprom = START_ADDR_EEPROM;
+		//printf("get %x, reset addr_read_eeprom to %d", addOffset, addr_read_eeprom);
 	}
 	else
 	{
@@ -99,7 +226,7 @@ void read_dataFromeeprom(UINT8 addOffset)
 	}
 	//addr = (addr_read_eeprom) + addOffset-1;
 	data = EEPROM_read(addr_read_eeprom);
-	printf("the data at %x is %d \r\n", addr_read_eeprom, data);
+	printf("the data at %x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
 }
 
 /*******************************************************************************

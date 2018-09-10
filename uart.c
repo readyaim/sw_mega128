@@ -398,11 +398,11 @@ void uart1_checkCMDPolling(void)
         {
             AddFifo(&CommandFifo, ch);
         }
-		else if (ch >= 'a' && ch < 'o')
+		else if (ch >= 'a' && ch <= 'o')
 		{
 			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
 			//AddFifo(&CommandFifo, ch);
-			printf("character %c is received\r\n", ch);
+			//printf("character %c is received\r\n", ch);
 		}
         if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
             RXC1_RD++;

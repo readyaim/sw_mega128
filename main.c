@@ -55,9 +55,10 @@ extern void collectADC0(void);
 #endif // _DUMMY_CODE
 
 UINT32 SystemTickCount;
-struct dataInEEPROM_t dataIneeprom, dataInRom_max, dataInRom_min;
+struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 struct Fifo CommandFifo;
 struct TimeStamp_t timeStampShot;
+//struct TimeAddr_t tempTimeAddr; //humidityTimeAddr, windSpeedTimeAddr...
 
 BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 {
@@ -73,16 +74,21 @@ void init_vars(void)
 {
 	struct Date_t initTime = {20,18,9,12,17,0};
 
-	initTime.year1 = 20;
-	initTime.year = 18;
-	initTime.mon = 9;
-	initTime.day = 8;
-	initTime.hour = 20;
-	initTime.min = 58;
 
+    SystemTickCount = 1;
+	dataInRom_g.data = 0;
 
-    SystemTickCount = 0;
-	dataIneeprom.data = 0;
+	//init max value
+	dataInRom_max_g.data = 0;
+	//init min value
+	dataInRom_min_g.data = 0xFFFF;
+
+/*
+	tempTimeAddr.time = initTime;
+	tempTimeAddr.addr = TEMP_START_ADDR_EEPROM;
+	tempTimeAddr.size = 2;	//2 bytes, might be possibly removed later
+	tempTimeAddr.grid = 60;	//60s sampling rate
+*/
 	timeStampShot.time = initTime;
 	timeStampShot.tickeCounter = 0;
     CommandFifo.IsEmpty = IsEmpty;

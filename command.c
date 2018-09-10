@@ -8,8 +8,8 @@ extern void uart1_init(void);
 extern void uart1_checkCMDPolling(void);
 extern void ticker_timer1_handler(void);
 extern void init_devices_timer1(void);
-extern void write_data2eeprom(dataInEEPROM_t *data2eeprom);
-extern void read_dataFromeeprom(UINT8 addOffset);
+extern void write_data2eeprom(void);
+extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
 
 /*******************************************************************************
@@ -20,11 +20,12 @@ extern void init_port_adc0(void);
 *******************************************************************************/
 void processCmd(UINT8 data)
 {
-    UINT8 i, command;
+    UINT8 i, command, para;
     UINT8 str[80];
     /*struct Result result;
     LED_Status = LED_QuickFlash;*/
     command = (data & 0xF0) >> 4;
+	para = (data & 0x0F);
     switch (command)
     {
         case GENERAL:
@@ -72,10 +73,31 @@ void processCmd(UINT8 data)
             //printf("Switch to Channel %d\r\n", SelectedChannelNo);
             ////		 sprintf(str,"C %u",SelectedChannelNo);
             ////		 PronunciationString(str);
-			write_data2eeprom(&dataIneeprom);
+			switch (para)
+			{
+			case 0:
+				// write data to eeprom
+				write_data2eeprom();
+				//after writing max and min to eeprom, clear max/min value
+				dataInRom_max_g.data = 0;
+				dataInRom_min_g.data = 0xFFFF;
+				break;
+			case 1:
+				//write max value
+				write_extremeData2eeprom(&dataInRom_max_g, para);
+				break;
+			case 2:
+				//write min value
+				write_extremeData2eeprom(&dataInRom_min_g, para);
+				break;
+			case 3: //Reset(); break;
+			default://printf("Illegal command!!\r\n"); 
+				break;
+			}
+			
             break;
 		case READEEPROM:
-			read_dataFromeeprom(data&0xF);
+			read_eepromCtrledByUART1(data&0xF);
 			break;
         case SETMEASUREMETHOD:
             if (data & 0x10) 
