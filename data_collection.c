@@ -7,9 +7,11 @@
 
 #include "global.h"
 
+
 //#define _DATA_COLLECT_DEBUG
 //enum TransIntervalMode_t transInterval = 5;
 UINT8 transInterval = 3;
+extern UINT16 get_data_adc(UINT8 channel);
 
 /*******************************************************************************
 * Function:      get_data()
@@ -18,7 +20,7 @@ UINT8 transInterval = 3;
 * Description:   collect temp, humidity....data through ADC or I2C
 					   TODO
 *******************************************************************************/
-UINT16 get_data(void)
+UINT16 get_data(UINT8 channel)
 {
 #ifdef _DATA_COLLECT_DEBUG
 	// for debug only
@@ -27,22 +29,22 @@ UINT16 get_data(void)
 #else
 	//for ADC0 sampling
 	UINT16 data;
-	data = get_data_adc0();
+	data = get_data_adc(channel);
 	return data;
 #endif // _DATA_COLLECT_DEBUG
-
-
 }
 
+
+
 /*******************************************************************************
-* Function:      get_time()
+* Function:      get_current_time()
 * Arguments:   currentTickCout and timeStampShot
 * Return:		  newTime;
 * Description:   caculate Date_t time according to currentTickCount and timeStampShot.
 					   timeStampShot is updated through GPRS module, activated by server. (by url ???)
 					   TODO
 *******************************************************************************/
-Date_t get_time(UINT32 currentTickCout)
+Date_t get_current_time(UINT32 currentTickCout)
 {
 	/*
 #ifdef _DATA_COLLECT_DEBUG
@@ -124,7 +126,7 @@ Date_t get_time(UINT32 currentTickCout)
 	timeStampShot.time = newTime;
 	timeStampShot.tickeCounter = currentTickCout;
 	return newTime;
-//#endif
+	//#endif
 }
 
 /*******************************************************************************
@@ -137,7 +139,125 @@ UINT16 get_addr(Date_t *time, TimeStamp_t *timestamp)
 {
 	NOP();
 }
+/*******************************************************************************
+* Function:      get_series_data()
+* Arguments:
+* Return:		  data;
+* Description:   collect temp, humidity....data through ADC or I2C
+					   TODO
+*******************************************************************************/
+void get_series_data(DataSeries_t *dataseries)
+{
+#ifdef _DATA_COLLECT_DEBUG
+	// for debug only
+	static UINT16 n = 0xA;
+	static UINT16 m = 1301;
+	dataseries->temp = n++;		//ADC0, temperature
+	dataseries->humidity = m++;		//ADC1, humidity
+	//return n++;
+#else
+	//for ADC0 sampling
+	UINT16 data;
+	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
+	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
+	//TODO: others data sampling
 
+#endif // _DATA_COLLECT_DEBUG
+}
+
+/*******************************************************************************
+* Function:      process_series_data()
+* Arguments:
+* Return:		  data;
+* Description:   collect temp, humidity....data through ADC or I2C
+					   TODO
+*******************************************************************************/
+void process_series_data(DataSeries_t *dataseries, UINT32 currentTickCount)
+{
+	UINT8 i, max_index, min_index;
+	UINT16 maxdata = 0, mindata = 0xFFFF;
+	UINT32 datasum = 0, tickCountDiff;
+	/* temperature */
+	//1. remove max value
+	//2. remove min value
+	for (i = 0; i <= 5; i++)
+	{
+		if (dataseries[i].temp > maxdata)
+		{
+			max_index = i;
+			maxdata = dataseries[i].temp;
+		}
+		//TODO: should be else if
+		if (dataseries[i].temp < mindata)
+		{
+			min_index = i;
+			mindata = dataseries[i].temp;
+		}
+	}
+	dataseries[min_index].temp = 0;
+	dataseries[max_index].temp = 0;
+	for (i = 0; i <= 5; i++)
+	{
+		datasum += dataseries[i].temp;
+	}
+	//3. average 4 remoains data
+	//4. save to eeprom data struct in (time, data) to buffer
+	dataSample_g.temp.data = (UINT16)(datasum >> 2);	//divide 4
+	printf("temperature sum is %d \r\n", datasum);
+	dataSample_g.temp.time = get_current_time(currentTickCount);
+	// 5. save max and min, with time
+	if (dataSample_g.temp.data > dataSample_max_g.temp.data)
+	{
+		dataSample_max_g.temp = dataSample_g.temp;
+	}
+	//TODO: should be else if
+	if (dataSample_g.temp.data < dataSample_min_g.temp.data)
+	{
+		dataSample_min_g.temp = dataSample_g.temp;
+	}
+	/* init values*/
+	maxdata = 0;
+	mindata = 0xFFFF;
+	datasum = 0;
+
+	/* humidity */
+	for (i = 0; i <= 5; i++)
+	{
+		if (dataseries[i].humidity > maxdata)
+		{
+			max_index = i;
+			maxdata = dataseries[i].humidity;
+		}
+		//TODO: should be else if
+		if (dataseries[i].humidity < mindata)
+		{
+			min_index = i;
+			mindata = dataseries[i].humidity;
+		}
+	}
+	//printf("humidity: max_index is %d, min_index is %d\r\n", max_index, min_index);
+	dataseries[min_index].humidity = 0;
+	dataseries[max_index].humidity = 0;
+	for (i = 0; i <= 5; i++)
+	{
+		datasum += dataseries[i].humidity;
+	}
+	dataSample_g.humidity.data = (UINT16)(datasum >> 2);	//divide 4
+	printf("humidity sum is %d \r\n", datasum);
+	dataSample_g.humidity.time = get_current_time(currentTickCount);
+
+	if (dataSample_g.humidity.data > dataSample_max_g.humidity.data)
+	{
+		dataSample_max_g.humidity = dataSample_g.humidity;
+	}
+	//TODO: should be else if
+	if (dataSample_g.humidity.data < dataSample_min_g.humidity.data)
+	{
+		dataSample_min_g.humidity = dataSample_g.humidity;
+	}
+	
+
+}
 /*******************************************************************************
 * Function:      ticker_timer1_handler()
 * Arguments:
@@ -150,12 +270,12 @@ void ticker_timer1_handler(void)
 	static UINT8 tick_divider = 50;
 	static UINT8 data_index = 0;
 	static UINT16 data[6];
+	static struct DataSeries_t dataseries[6];
 	UINT8 i;
 	UINT16 maxdata = 0, mindata = 0, max_index = 0, min_index = 0;
-	UINT32 currentTickCount = 0, TickCount = 0;
+	UINT32 currentTickCount = 0,tickCountDiff = 0;
 	UINT32 datasum = 0;
 	static UINT32 lastTickCount = 0xFFFF;
-	static UINT32 intervalcounter = 0;
 
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
 	if (currentTickCount % tick_divider == 0)
@@ -167,89 +287,45 @@ void ticker_timer1_handler(void)
 			{
 			case 5:
 				/*get 3rd data*/
-				data[data_index] = get_data();
+				get_series_data(&dataseries[data_index]); 
 				data_index = 0;
-				intervalcounter += 1;
-				//1. remove max value
-				//2. remove min value
-				for (i = 0; i <= 5; i++)
-				{
-					if (data[i] > maxdata)
-						max_index = i;
-					else if (data[i] < mindata)
-						min_index = i;
-				}
-				data[max_index] = 0;
-				data[min_index] = 0;
-				for (i = 0; i <= 5; i++)
-				{
-				//	if (i != max_index && i != min_index)
-						//sum, remove max/min
-						datasum += data[i];
-				}
-				//3. average 4 remoains data
-				//4. save to eeprom data struct in (time, data) to buffer
-				dataInRom_g.data = (UINT16)(datasum >> 2);		//sum/4, and save it
-				//dataInRom_g.data = (UINT16)(datasum/4);		//sum/4, and save it
-				printf("datasum is %d, average is %x \r\n", datasum, dataInRom_g.data);
-				dataInRom_g.time = get_time(currentTickCount);			//save time, TODO
-				// 5. save max and min, with time
-				// TODO
-				//dataInRom_max_g, dataInRom_min_g
-				if (dataInRom_g.data > dataInRom_max_g.data)
-				{
-					dataInRom_max_g = dataInRom_g;
-					//(*CommandFifo.AddFifo)(&CommandFifo, 0x51);	//fifo cmd, write max value to eeprom
-					//TODO add 0x51 command
-				}
-				if (dataInRom_g.data < dataInRom_min_g.data)
-				{
-					dataInRom_min_g = dataInRom_g;
-					//(*CommandFifo.AddFifo)(&CommandFifo, 0x52);	//fifo cmd, write min value to eeprom
-					//TODO add 0x52 command
-				}
-
-				//6. Save the result to eeprom, according to transInterval
+				process_series_data(dataseries, currentTickCount );
 				/*
-				//if (currentTickCount % (transInterval * 300) == 0)
-				//if (currentTickCount % 600 ==0)
-				if (intervalcounter % 2==0)
-				{
-					// TODO: Possible to miss 1 tick. need to modify to be robust
-					
-					(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
-					printf("fifo cmd 0x50: write eeprom commands\r\n");
-				}
+				//Caculate howmany tick does it need
+				tickCountDiff = SystemTickCount - currentTickCount;
+				printf("TickCountDiff for case5 is %x\r\n", tickCountDiff);
 				*/
-
 				break;
 			case 4:
 				/*get 2nd data*/
-				data[data_index] = get_data();
+				get_series_data(&dataseries[data_index]);
+				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
 			case 3:
 				/*get 2nd data*/
-				data[data_index] = get_data();
+				get_series_data(&dataseries[data_index]); 
+				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
 			case 2:
 				/*get 2nd data*/
-				data[data_index] = get_data();
+				//data[data_index] = get_data(0x0);
+				get_series_data(&dataseries[data_index]);
 				data_index++;
 				break;
 			case 1:
 				/*get 2nd data*/
-				data[data_index] = get_data();
+				get_series_data(&dataseries[data_index]);
+				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
 			case 0:
 				/*get 1st data*/
-				data[data_index] = get_data();
-				printf("data[0] is collected as %d\r\n", data[data_index]);
+				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
+				printf("...............1st data..............\r\n");
+				get_series_data(&dataseries[data_index]);
 				data_index++;
-				
-
 				break;
 			default:
 				NOP();
@@ -261,14 +337,12 @@ void ticker_timer1_handler(void)
 			{
 				// TODO: Possible to miss 1 tick. need to modify to be robust
 				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
-				printf("fifo cmd 0x50: write eeprom commands\r\n");
-				
+				//printf("fifo cmd 0x50: write eeprom commands\r\n");
+
 			}
 		}
-
 	}
 }
-
 
 
 

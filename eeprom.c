@@ -146,7 +146,35 @@ void write_data2eeprom(void)
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
 }
+/*******************************************************************************
+* Function:     write_dataSeries2eeprom()
+* Arguments:  *data2eeprom
+* Return:
+* Description:  write data to eeprom, MSB in low address
+*******************************************************************************/
+void write_dataSeries2eeprom(void)
+{
+	/* temperature */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.temp);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.temp);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.temp);
+	addr_write_eeprom += 8;
 
+	/* humidity */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.humidity);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.humidity);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.humidity);
+	addr_write_eeprom += 8;
+	//TODO: solve addr_write_eeprom overflow
+	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE)
+	{
+		addr_write_eeprom = START_ADDR_EEPROM;
+	}
+}
 /*******************************************************************************
 * Function:     read_dataIneeprom()
 * Arguments:  uiAddress: address, *data2eeprom: the point of data to be saved

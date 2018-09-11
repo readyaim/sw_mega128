@@ -8,7 +8,7 @@ extern void uart1_init(void);
 extern void uart1_checkCMDPolling(void);
 extern void ticker_timer1_handler(void);
 extern void init_devices_timer1(void);
-extern void write_data2eeprom(void);
+extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
 
@@ -77,10 +77,13 @@ void processCmd(UINT8 data)
 			{
 			case 0:
 				// write data to eeprom
-				write_data2eeprom();
+				write_dataSeries2eeprom();
 				//after writing max and min to eeprom, clear max/min value
-				dataInRom_max_g.data = 0;
-				dataInRom_min_g.data = 0xFFFF;
+				dataSample_max_g.temp.data = 0;
+				dataSample_min_g.temp.data = 0xFFFF;
+				dataSample_max_g.humidity.data = 0;
+				dataSample_min_g.humidity.data = 0xFFFF;
+
 				break;
 			case 1:
 				//write max value

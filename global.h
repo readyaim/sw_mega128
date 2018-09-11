@@ -120,13 +120,36 @@ typedef struct dataInEEPROM_t {
 	UINT16 data;
 
 }dataInEEPROM_t;
-
-typedef struct dataSeries_t {
-
-	UINT8 data;
-	UINT8 index;
-}dataSeries_t;
 extern struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
+
+typedef struct DataTimeSeries_t {
+	dataInEEPROM_t temp;
+	dataInEEPROM_t humidity;
+	dataInEEPROM_t airPressure;
+	dataInEEPROM_t groundTemp;
+	dataInEEPROM_t radiation;
+	dataInEEPROM_t windSpeed;
+	dataInEEPROM_t windDirection;
+	dataInEEPROM_t rain;
+	dataInEEPROM_t sunShineTime;
+	dataInEEPROM_t evaporation;
+}DataTimeSeries_t;
+extern struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
+
+typedef struct DataSeries_t {
+	UINT16 temp;
+	UINT16 humidity;
+	UINT16 airPressure;
+	UINT16 groundTemp;
+	UINT16 radiation;
+	UINT16 windSpeed;
+	UINT16 windDirection;
+	UINT16 rain;
+	UINT16 sunShineTime;
+	UINT16 evaporation;
+}DataSeries_t;
+
+
 
 typedef struct TimeStamp_t {
 	Date_t time;

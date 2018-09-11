@@ -56,6 +56,7 @@ extern void collectADC0(void);
 
 UINT32 SystemTickCount;
 struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
+struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 struct Fifo CommandFifo;
 struct TimeStamp_t timeStampShot;
 //struct TimeAddr_t tempTimeAddr; //humidityTimeAddr, windSpeedTimeAddr...
@@ -89,6 +90,16 @@ void init_vars(void)
 	tempTimeAddr.size = 2;	//2 bytes, might be possibly removed later
 	tempTimeAddr.grid = 60;	//60s sampling rate
 */
+	dataSample_g.temp.time = initTime;
+	dataSample_g.temp.data = 0;
+	dataSample_g.humidity.time = initTime;
+	dataSample_g.humidity.data = 0;
+	dataSample_max_g.temp.data = 0;
+	dataSample_min_g.temp.data = 0xFFFF;
+	dataSample_max_g.humidity.data = 0;
+	dataSample_min_g.humidity.data = 0xFFFF;
+
+
 	timeStampShot.time = initTime;
 	timeStampShot.tickeCounter = 0;
     CommandFifo.IsEmpty = IsEmpty;

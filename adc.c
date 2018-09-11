@@ -31,11 +31,14 @@ void init_port_adc0(void)
     Clr_Bit(PORTF, ADC0);   //PORTF = 0X00;//AD采集口 ADC0 设置为输入
     Clr_Bit(DDRF, ADC0);    //DDRF = 0X00;
 
+	Clr_Bit(PORTF, ADC1);   //PORTF = 0X00;//AD采集口 ADC1 设置为输入
+	Clr_Bit(DDRF, ADC1);    //DDRF = 0X00;
+
     //ADMUX = 0x00;   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
     //ADMUX |= (1 << REFS1) | (1 << REFS0);   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
     ADMUX = (1 << REFS1) | (1 << REFS0);   //1100 0000     11:内部基准电压 0:左对齐 00000:ADC0通道
     //ADMUX &= 0xE0;      //BIT[4:0]: choose ADC0
-    choose_ADC_channel(0x00);   //BIT[4:0]: choose ADC0
+    choose_ADC_channel(0x00);   //BIT[4:0]: choose ADC0 as default. Shall be set before adc_polling.
     Clr_Bit(ADMUX, ADLAR);  // BIT(ADLAR)=0:right adjusted result
 
     ACSR = 0x80;//此处加不加都可以, 比较器设置
@@ -199,20 +202,21 @@ void collectADC0(void)
 
 }
 /*******************************************************************************
-* Function:     get_data_adc0()
-* Arguments:
+* Function:     get_data_adc()
+* Arguments:  channel: 0=adc0, 1=adc1,...,7=adc7
 * Return:        return the average ADC conversion data
 * Description:  read ADC0, and average in 10 samples(skip the obvious bad result).
 *******************************************************************************/
 
-UINT16 get_data_adc0(void)
+UINT16 get_data_adc(UINT8 channel)
 {
 	UINT16 dataADC;
 	UINT16 dataADC_mv;
+	choose_ADC_channel(channel);
 	dataADC = ad_conversion_polling();
 	//printf("ADC0 HEX result is %d\r\n", dataADC);
 	dataADC_mv = dataADC_HEX2mv(dataADC);
-	printf("ADC0 mv result is %d mv\r\n", dataADC_mv);
+	printf("ADC%d is %d mv\r\n", channel, dataADC_mv);
 	return dataADC_mv;
 }
 
