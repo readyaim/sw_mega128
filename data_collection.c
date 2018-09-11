@@ -323,7 +323,7 @@ void ticker_timer1_handler(void)
 			case 0:
 				/*get 1st data*/
 				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
-				printf("...............1st data..............\r\n");
+				printf(".....1st data......\r\n");
 				get_series_data(&dataseries[data_index]);
 				data_index++;
 				break;

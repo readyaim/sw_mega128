@@ -77,7 +77,9 @@ void processCmd(UINT8 data)
 			{
 			case 0:
 				// write data to eeprom
+				printf("write eeprom\r\n");
 				write_dataSeries2eeprom();
+
 				//after writing max and min to eeprom, clear max/min value
 				dataSample_max_g.temp.data = 0;
 				dataSample_min_g.temp.data = 0xFFFF;
