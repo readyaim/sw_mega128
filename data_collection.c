@@ -35,13 +35,28 @@ UINT16 get_data(UINT8 channel)
 }
 
 
+/*******************************************************************************
+* Function:      update_timeStampShot()
+* Arguments:   
+* Return:		  
+* Description:  Upate the time/tickcount of timeStampShot
+*******************************************************************************/
+void update_timeStampShot(void)
+{
+	Date_t newTime = { 20,18, 9,12,15,20 };
+	TimeStamp_t  lasttimeStampShot;
+	UINT32 newTickCount;
+	timeStampShot_g.time = newTime;
+	timeStampShot_g.tickeCounter = SystemTickCount;
+	
+}
 
 /*******************************************************************************
 * Function:      get_current_time()
-* Arguments:   currentTickCout and timeStampShot
+* Arguments:   currentTickCout and timeStampShot_g
 * Return:		  newTime;
-* Description:   caculate Date_t time according to currentTickCount and timeStampShot.
-					   timeStampShot is updated through GPRS module, activated by server. (by url ???)
+* Description:   caculate Date_t time according to currentTickCount and timeStampShot_g.
+					   timeStampShot_g is updated through GPRS module, activated by server. (by url ???)
 					   TODO
 *******************************************************************************/
 Date_t get_current_time(UINT32 currentTickCout)
@@ -49,7 +64,7 @@ Date_t get_current_time(UINT32 currentTickCout)
 	/*
 #ifdef _DATA_COLLECT_DEBUG
 	struct Date_t newTime;
-	newTime = timeStampShot.time;
+	newTime = timeStampShot_g.time;
 	newTime.min += 3;
 	newTime.hour += 2;
 	return newTime;
@@ -59,17 +74,17 @@ Date_t get_current_time(UINT32 currentTickCout)
 	Date_t  newTime;
 	UINT32 tickCounterDiff = 0;
 	UINT32 tmp_day, tmp_hour, tmp_min;
-	if (currentTickCout >= timeStampShot.tickeCounter)
+	if (currentTickCout >= timeStampShot_g.tickeCounter)
 	{
-		tickCounterDiff = currentTickCout - timeStampShot.tickeCounter;
+		tickCounterDiff = currentTickCout - timeStampShot_g.tickeCounter;
 	}
 	else
 	{
 		//TODO, exception when tickcouter overflow.
-		tickCounterDiff = 4294967295 - timeStampShot.tickeCounter + currentTickCout;
+		tickCounterDiff = 4294967295 - timeStampShot_g.tickeCounter + currentTickCout;
 		//NOP();
 	}
-	newTime = timeStampShot.time;	//copy time to new time
+	newTime = timeStampShot_g.time;	//copy time to new time
 	//TODO caculate difference.
 
 	//1s: 5tick
@@ -122,9 +137,9 @@ Date_t get_current_time(UINT32 currentTickCout)
 		newTime.year1 += 1;
 	}
 
-	//Update timeStampShot
-	timeStampShot.time = newTime;
-	timeStampShot.tickeCounter = currentTickCout;
+	//Update timeStampShot_g
+	timeStampShot_g.time = newTime;
+	timeStampShot_g.tickeCounter = currentTickCout;
 	return newTime;
 	//#endif
 }
@@ -140,13 +155,13 @@ UINT16 get_addr(Date_t *time, TimeStamp_t *timestamp)
 	NOP();
 }
 /*******************************************************************************
-* Function:      get_series_data()
+* Function:      get_series_data_10sec()
 * Arguments:
 * Return:		  data;
 * Description:   collect temp, humidity....data through ADC or I2C
 					   TODO
 *******************************************************************************/
-void get_series_data(DataSeries_t *dataseries)
+void get_series_data_10sec(DataSeries_t *dataseries)
 {
 #ifdef _DATA_COLLECT_DEBUG
 	// for debug only
@@ -160,19 +175,107 @@ void get_series_data(DataSeries_t *dataseries)
 	UINT16 data;
 	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
 	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
+	printf("temp is %d mv\r\n", dataseries->temp);
+	printf("humidity is %d mv\r\n", dataseries->humidity);
 	//TODO: others data sampling
 
 #endif // _DATA_COLLECT_DEBUG
 }
 
 /*******************************************************************************
-* Function:      process_series_data()
+* Function:      get_series_data_1min()
+* Arguments:
+* Return:		  data;
+* Description:   collect rain, evaporation, sunShine, data through ADC or I2C
+					   TODO
+*******************************************************************************/
+void get_series_data_1min(void)
+{
+#if 1
+	// for debug only
+	static UINT16 n = 200;
+	static UINT16 m = 50;
+	static UINT16 o = 3000;
+	
+	dataSample_g.rain.data = n;
+	dataSample_g.evaporation.data = m;
+	dataSample_g.sunShineTime.data = o;
+	printf("rain is %d mv\r\n", n);
+	printf("evaporation is %d mv\r\n", m);
+	printf("sunShineTime is %d mv\r\n", o);
+	n += 3;
+	m += 2;
+	o += 20;
+	//return n++;
+#else
+	//for ADC0 sampling
+	UINT16 data;
+	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
+	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
+	//TODO: others data sampling
+
+#endif // _DATA_COLLECT_DEBUG
+}
+/*******************************************************************************
+* Function:      process_series_data_1min()
 * Arguments:
 * Return:		  data;
 * Description:   collect temp, humidity....data through ADC or I2C
 					   TODO
 *******************************************************************************/
-void process_series_data(DataSeries_t *dataseries, UINT32 currentTickCount)
+void process_series_data_1min(UINT32 currentTickCount)
+{
+	UINT8 i, max_index, min_index;
+	UINT16 maxdata = 0, mindata = 0xFFFF;
+	UINT32 datasum = 0, tickCountDiff;
+	/* evaporation */
+	dataSample_g.evaporation.time = get_current_time(currentTickCount);
+	// save max and min, with time
+	if (dataSample_g.evaporation.data > dataSample_max_g.evaporation.data)
+	{
+		dataSample_max_g.evaporation = dataSample_g.evaporation;
+	}
+	//TODO: should be else if
+	if (dataSample_g.evaporation.data < dataSample_min_g.evaporation.data)
+	{
+		dataSample_min_g.evaporation = dataSample_g.evaporation;
+	}
+
+	/* sunShineTime */
+	dataSample_g.sunShineTime.time = get_current_time(currentTickCount);
+	// save max and min, with time
+	if (dataSample_g.sunShineTime.data > dataSample_max_g.sunShineTime.data)
+	{
+		dataSample_max_g.sunShineTime = dataSample_g.sunShineTime;
+	}
+	//TODO: should be else if
+	if (dataSample_g.sunShineTime.data < dataSample_min_g.sunShineTime.data)
+	{
+		dataSample_min_g.sunShineTime = dataSample_g.sunShineTime;
+	}
+
+	/* temperature */
+	dataSample_g.rain.time = get_current_time(currentTickCount);
+	// save max and min, with time
+	if (dataSample_g.rain.data > dataSample_max_g.rain.data)
+	{
+		dataSample_max_g.rain = dataSample_g.rain;
+	}
+	//TODO: should be else if
+	if (dataSample_g.rain.data < dataSample_min_g.rain.data)
+	{
+		dataSample_min_g.rain = dataSample_g.rain;
+	}
+
+}
+/*******************************************************************************
+* Function:      process_series_data_10sec()
+* Arguments:
+* Return:		  data;
+* Description:   collect temp, humidity....data through ADC or I2C
+					   TODO
+*******************************************************************************/
+void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount)
 {
 	UINT8 i, max_index, min_index;
 	UINT16 maxdata = 0, mindata = 0xFFFF;
@@ -287,9 +390,9 @@ void ticker_timer1_handler(void)
 			{
 			case 5:
 				/*get 3rd data*/
-				get_series_data(&dataseries[data_index]); 
+				get_series_data_10sec(&dataseries[data_index]); 
 				data_index = 0;
-				process_series_data(dataseries, currentTickCount );
+				process_series_data_10sec(dataseries, currentTickCount );
 				/*
 				//Caculate howmany tick does it need
 				tickCountDiff = SystemTickCount - currentTickCount;
@@ -298,25 +401,25 @@ void ticker_timer1_handler(void)
 				break;
 			case 4:
 				/*get 2nd data*/
-				get_series_data(&dataseries[data_index]);
+				get_series_data_10sec(&dataseries[data_index]);
 				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
 			case 3:
 				/*get 2nd data*/
-				get_series_data(&dataseries[data_index]); 
+				get_series_data_10sec(&dataseries[data_index]); 
 				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
 			case 2:
 				/*get 2nd data*/
 				//data[data_index] = get_data(0x0);
-				get_series_data(&dataseries[data_index]);
+				get_series_data_10sec(&dataseries[data_index]);
 				data_index++;
 				break;
 			case 1:
 				/*get 2nd data*/
-				get_series_data(&dataseries[data_index]);
+				get_series_data_10sec(&dataseries[data_index]);
 				//data[data_index] = get_data(0x0);
 				data_index++;
 				break;
@@ -324,7 +427,7 @@ void ticker_timer1_handler(void)
 				/*get 1st data*/
 				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
 				printf(".....1st data......\r\n");
-				get_series_data(&dataseries[data_index]);
+				get_series_data_10sec(&dataseries[data_index]);
 				data_index++;
 				break;
 			default:
@@ -333,6 +436,11 @@ void ticker_timer1_handler(void)
 			}
 			//get_data();
 			//ch_show
+			if (currentTickCount % 300 == 0)
+			{// 1min
+				get_series_data_1min();
+				process_series_data_1min(currentTickCount);
+			}
 			if (currentTickCount % (transInterval * 300) == 0)
 			{
 				// TODO: Possible to miss 1 tick. need to modify to be robust

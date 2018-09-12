@@ -21,6 +21,7 @@
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
+#define UART1_MAX_RX_BUFFER 16	//uart1 Rx buffer size
 
 extern BOOL AddFifo(struct Fifo *this, UINT8 data);
 
@@ -43,7 +44,25 @@ static UINT8 RXC1_WR;   //接受缓冲区写指针
 static UINT8 TXC1_RD;   //发送缓冲区读指针
 static UINT8 TXC1_WR;   //发送缓冲区写指针
 
-
+/****************************************************************************
+Function:       char2int()
+Arguments:    char
+Returns:
+Descriptions:  transfer char to int
+****************************************************************************/
+UINT8 char2int(UINT8 ch)
+{
+	UINT8 t;
+	t = 'a';
+	return (UINT8)((UINT16)(ch));
+	if ((ch >= '0') && (ch <= '9'))
+		return ch - 48;
+	else if ((ch >= 'A') && (ch <= 'Z'))
+		return ch - 'A' + 65;
+	else if ((ch >= 'a') && (ch <= 'z'))
+		return ch - 'a' + 97;
+	else return (-1);
+}
 /****************************************************************************
 Function Name: uart0初始化程序
 Arguments: 
@@ -377,6 +396,44 @@ void uart1_gets(UINT8 *rcv)
         rcv++;
     }
 }
+
+/*******************************************************************************
+* Function:     str2intTime()
+* Arguments:  *str = "!201806080810"
+* Return:		 result=0 no error, 1 error	
+* Description:  update timeStampShot_g if the received data is valid, else return false, and send back NAK
+					  
+*******************************************************************************/
+void copystr2TimeStamp(UINT8 *str)
+{
+	UINT8 *s, result=0;
+	Date_t newTime;
+	s = str;
+
+	s++;
+	while (*s)
+	{
+		if (*s< '0' | *s > '9')
+			result = 1;
+		s++;
+		printf("%c", *s);
+		
+	}
+	
+	if (result==0)
+	{
+			newTime.year1 = *(str + 1) * 10 + *(str + 2) - 48*11;
+			newTime.year = *(str + 3) * 10 + *(str + 4) - 48 * 11;
+			newTime.mon = *(str + 5) * 10 + *(str + 6) - 48 * 11;
+			newTime.day = *(str + 7) * 10 + *(str + 8) - 48 * 11;
+			newTime.hour = *(str + 9) * 10 + *(str + 10) - 48 * 11;
+			newTime.min = *(str + 11) * 10 + *(str + 12) - 48 * 11;
+			timeStampShot_g.time = newTime;
+			timeStampShot_g.tickeCounter = SystemTickCount;
+			printf("timeStampShot_g is updated\r\n");
+	}
+	
+}
 /*******************************************************************************
 * Function:     uart1_checkCMDPolling()
 * Arguments:  
@@ -385,11 +442,9 @@ void uart1_gets(UINT8 *rcv)
 *******************************************************************************/
 void uart1_checkCMDPolling(void)
 {
-    UINT8 ch;
+#if 0
+	UINT8 ch;
     
-//    RXC1_BUFF[RXC1_WR] = '5';
-//    RXC1_WR += 1;
-
     while (RXC1_RD != RXC1_WR)
     {
         ch = RXC1_BUFF[RXC1_RD];
@@ -409,6 +464,46 @@ void uart1_checkCMDPolling(void)
         else
             RXC1_RD = 0;
     }
+#else
+	UINT8 str[UART1_MAX_RX_BUFFER];
+	UINT8 *sp=str, ch, i;
+	UINT8 flag = 0;
+	i = 0;
+	
+	while (RXC1_RD != RXC1_WR)
+	{
+		flag = 1;
+		ch = RXC1_BUFF[RXC1_RD];
+		uart1_putchar(ch);
+		if (i < UART1_MAX_RX_BUFFER)
+		{
+			*(sp++) = ch;
+			i++;
+		}
+		if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
+			RXC1_RD++;
+		else
+			RXC1_RD = 0;
+	}
+	if (flag == 1)
+	{
+		*sp = '\0';		//add end of string
+		if (str[0] > '0' && str[0] < '9')
+		{
+			AddFifo(&CommandFifo, ch);
+		}
+		else if (str[0] >= 'a' && str[0] <= 'o')
+		{
+			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
+			//AddFifo(&CommandFifo, ch);
+			//printf("character %c is received\r\n", ch);
+		}
+		else if (str[0] == '!')
+		{
+			copystr2TimeStamp(str);
+		}
+	}
+#endif
 }
 
 /****************************************************************************
@@ -623,25 +718,7 @@ void main_uart1_loopback(void)
 
 
 #ifdef _DUMMY_CODE
-/****************************************************************************
-Function:       char2int()
-Arguments:    char
-Returns:
-Descriptions:  transfer char to int
-****************************************************************************/
-UINT8 char2int(UINT8 ch)
-{
-    UINT8 t;
-    t = 'a';
-    return (UINT8)((UINT16)(ch));
-    if ((ch >= '0') && (ch <= '9'))
-        return ch - '0' + 48;
-    else if ((ch >= 'A') && (ch <= 'Z'))
-        return ch - 'A' + 65;
-    else if ((ch >= 'a') && (ch <= 'z'))
-        return ch - 'a' + 97;
-    else return (-1);
-}
+
 /****************************************************************************
 Function Name: test_char2int()
 Arguments:
@@ -676,6 +753,17 @@ void test_char2int(void)
 
     NOP();
     while (1);
+}
+/****************************************************************************
+Function Name: test_copystr2TimeStamp()
+Arguments:
+Returns:
+Descriptions: transfer char to int
+****************************************************************************/
+void test_copystr2TimeStamp(void)
+{
+	UINT8 *s = "!201809121530";
+	copystr2TimeStamp(s);
 }
 #endif // _DUMMY_CODE
 

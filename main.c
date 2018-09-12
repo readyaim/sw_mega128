@@ -51,6 +51,7 @@ extern void test_char2int(void);
 extern void test_strcmp(void);
 extern void test_usr(void);
 extern void collectADC0(void);
+extern void test_copystr2TimeStamp(void);
 
 #endif // _DUMMY_CODE
 
@@ -58,7 +59,8 @@ UINT32 SystemTickCount;
 struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 struct Fifo CommandFifo;
-struct TimeStamp_t timeStampShot;
+struct TimeStamp_t timeStampShot_g;
+
 //struct TimeAddr_t tempTimeAddr; //humidityTimeAddr, windSpeedTimeAddr...
 
 BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
@@ -98,10 +100,16 @@ void init_vars(void)
 	dataSample_min_g.temp.data = 0xFFFF;
 	dataSample_max_g.humidity.data = 0;
 	dataSample_min_g.humidity.data = 0xFFFF;
+	
+	dataSample_max_g.rain.data = 0;
+	dataSample_min_g.rain.data = 0xFFFF;
+	dataSample_max_g.evaporation.data = 0;
+	dataSample_min_g.evaporation.data = 0xFFFF;
+	dataSample_max_g.sunShineTime.data = 0;
+	dataSample_min_g.sunShineTime.data = 0xFFFF;
 
-
-	timeStampShot.time = initTime;
-	timeStampShot.tickeCounter = 0;
+	timeStampShot_g.time = initTime;
+	timeStampShot_g.tickeCounter = 0;
     CommandFifo.IsEmpty = IsEmpty;
     CommandFifo.AddFifo = AddFifo;
     CommandFifo.FetchFifo = FetchFifo;
@@ -134,6 +142,7 @@ void main(void)
     //collectADC0();
     //test_EEPROM();
 	ticker_processCmd();
+	//test_copystr2TimeStamp();
 
 
     

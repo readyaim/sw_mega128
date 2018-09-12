@@ -11,6 +11,7 @@ extern void init_devices_timer1(void);
 extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
+extern void update_timeStampShot(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -49,6 +50,11 @@ void processCmd(UINT8 data)
             printf("Channel Name : %s\r\n", ChannelName);*/
             find_key(data & 0x0F);
             break;
+		case UPDATETIME:
+			/* Update time to timeStampShot_g*/
+			update_timeStampShot();
+			
+			break;
         case CollectData:
             switch (data & 0x0f)
             {

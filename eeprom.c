@@ -254,7 +254,7 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 	}
 	//addr = (addr_read_eeprom) + addOffset-1;
 	data = EEPROM_read(addr_read_eeprom);
-	printf("the data at %x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
+	printf("data@0x%x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
 }
 
 /*******************************************************************************
@@ -270,7 +270,7 @@ void test_EEPROM(void)
 	for (i = 0; i < 10; i++)
 	{
 		data = EEPROM_read((UINT16)i);
-		printf("the data at %d is  %d \r\n", i, data);
+		printf("data@%d is  %d \r\n", i, data);
 	}
 	
 	for (i = 0; i < 10; i++)

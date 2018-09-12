@@ -216,7 +216,7 @@ UINT16 get_data_adc(UINT8 channel)
 	dataADC = ad_conversion_polling();
 	//printf("ADC0 HEX result is %d\r\n", dataADC);
 	dataADC_mv = dataADC_HEX2mv(dataADC);
-	printf("ADC%d is %d mv\r\n", channel, dataADC_mv);
+	//printf("ADC%d is %d mv\r\n", channel, dataADC_mv);
 	return dataADC_mv;
 }
 

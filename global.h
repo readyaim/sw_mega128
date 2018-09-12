@@ -28,14 +28,17 @@
 #define BEEPERPWM OCR1B
 //#define VREFPWM OCR1CL
 
+
+/* command.h*/
 #define GENERAL 0
+#define UPDATETIME 2
 #define ShowNumOnLED 3
 #define CollectData 4
 #define SAVE2EEPROM 5
 #define READEEPROM 6
 
 #define SETMEASUREMETHOD 1
-#define SELECTCHANNEL 2
+
 #define SELECTEXPENDCHANNEL 8
 
 
@@ -155,7 +158,7 @@ typedef struct TimeStamp_t {
 	Date_t time;
 	UINT32 tickeCounter;
 }TimeStamp_t;
-extern struct TimeStamp_t timeStampShot;
+extern struct TimeStamp_t timeStampShot_g;
 
 /*
 enum TransIntervalMode_t {
