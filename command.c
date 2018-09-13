@@ -11,6 +11,7 @@ extern void init_devices_timer1(void);
 extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
+extern void read_eeprom_to_UART1buffer(UINT8 addr);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -22,6 +23,7 @@ void processCmd(UINT8 data)
 {
     UINT8 i, command, para;
     UINT8 str[80];
+	UINT16 addr_eeprom;
     /*struct Result result;
     LED_Status = LED_QuickFlash;*/
     command = (data & 0xF0) >> 4;
@@ -100,8 +102,9 @@ void processCmd(UINT8 data)
 
 				break;
 			case 1:
-				//write max value
-				write_extremeData2eeprom(&dataInRom_max_g, para);
+				//Upload data
+				addr_eeprom = get_address(uploadTime_g);
+				read_eeprom_to_UART1buffer(addr_eeprom);
 				break;
 			case 2:
 				//write min value

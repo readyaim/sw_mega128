@@ -34,16 +34,14 @@ static UINT8 RXC0_WR;   //接受缓冲区写指针
 static UINT8 TXC0_RD;   //发送缓冲区读指针
 static UINT8 TXC0_WR;   //发送缓冲区写指针
 
-#define RXC1_BUFF_SIZE 128   //接受缓冲区字节数
-#define TXC1_BUFF_SIZE 128   //发送缓冲区字节数
 
 // add static to forbiden other file to use
 static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //定义接受缓冲区
-static UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
+UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
 static UINT8 RXC1_RD;   //接受缓冲区读指针
 static UINT8 RXC1_WR;   //接受缓冲区写指针
-static UINT8 TXC1_RD;   //发送缓冲区读指针
-static UINT8 TXC1_WR;   //发送缓冲区写指针
+UINT8 TXC1_RD;   //发送缓冲区读指针
+UINT8 TXC1_WR;   //发送缓冲区写指针
 
 /****************************************************************************
 Function:       char2int()
@@ -412,6 +410,7 @@ void uart1_cmdParsing(UINT8 ch)
 	static UINT8 str[UART1_MAX_RX_BUFFER];
 	static UINT32 tickcoutStart;
 	Date_t newTime;
+	UINT16 addr_eeprom;
 	UINT8 i = 0;
 
 	switch (state)
@@ -433,6 +432,12 @@ void uart1_cmdParsing(UINT8 ch)
 			state = 1;				//to next state machine.
 			char_index = 0;		//initiation
 			tickcoutStart = SystemTickCount;		//timeout counter
+		}
+		else if (ch = '"')
+		{
+			//request upload data with attached time
+			state = 2;
+			char_index = 0;
 		}
 		break;
 
@@ -468,13 +473,50 @@ void uart1_cmdParsing(UINT8 ch)
 				printf("timeStampShot_g is updated\r\n");
 
 			}
-
 		}
 		/*
 		if (TimeIsUp(tickcoutStart, 15))
 		{
 			state = 0;
 			printf("timeout, state=0\r\n");
+		}
+		*/
+		break;
+	case 2:
+		//multi-char commands
+		if (ch<'0' | ch>'9')
+		{
+			//non-number is received, quit update Time command mode.
+			state = 0;
+			printf("non-num received, quit \r\n");
+		}
+		else
+		{
+			//Update timeStampShot_g
+			str[char_index++] = ch;
+			if (char_index > 11)
+			{
+				//TODO:
+				i = 0;
+				uploadTime_g.year1 = *(str + i) * 10 + *(str + i + 1) - 48 * 11;
+				uploadTime_g.year = *(str + i + 2) * 10 + *(str + i + 3) - 48 * 11;
+				uploadTime_g.mon = *(str + i + 4) * 10 + *(str + i + 5) - 48 * 11;
+				uploadTime_g.day = *(str + i + 6) * 10 + *(str + i + 7) - 48 * 11;
+				uploadTime_g.hour = *(str + i + 8) * 10 + *(str + i + 9) - 48 * 11;
+				uploadTime_g.min = *(str + i + 10) * 10 + *(str + i + 11) - 48 * 11;
+				//addr_eeprom = get_address(uploadTime_g);
+				//read_eeprom_to_UART1buffer(addr_eeprom);
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x23);	//add to fifo, read eeprom commands
+				state = 0;
+				printf("upload data is requested\r\n");
+
+			}
+		}
+		/*
+		if (TimeIsUp(tickcoutStart, 15))
+		{
+		state = 0;
+		printf("timeout, state=0\r\n");
 		}
 		*/
 		break;

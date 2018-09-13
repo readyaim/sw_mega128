@@ -281,6 +281,34 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 	data = EEPROM_read(addr_read_eeprom);
 	printf("data@0x%x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
 }
+/*******************************************************************************
+* Function:     read_eeprom_to_UART1buffer()
+* Arguments:  addr, timeStampShot.pagesize
+* Return:
+* Description:  read eeprom from address, size= timeStampShot.pagesize
+*******************************************************************************/
+void read_eeprom_to_UART1buffer(UINT16 addr)
+{
+	//disable UART1 Rx Interrupt
+	UINT8 data, i;
+	//TODO
+	//1. make sure buffer is empty
+	for (i = 0; i <= timeStampShot_g.pageSize; i++)
+	{
+		data = EEPROM_read(addr++);
+		//TODO: transfer dec to str
+		TXC1_BUFF[TXC1_WR] = data;
+		if (TXC1_WR < (TXC1_BUFF_SIZE - 1))   //TXC1_BUFF_SIZE  发送区数据大小
+			TXC1_WR++;
+		else
+			TXC1_WR = 0;
+	}
+	
+	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
+	Set_Bit(UCSR1B, UDRIE1);          //开启UDRE中断
+
+	//enable UART1 Rx Interrupt
+}
 
 /*******************************************************************************
 * Function:     test_EEPROM()

@@ -60,6 +60,7 @@ struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 struct Fifo CommandFifo;
 struct TimeStamp_t timeStampShot_g;
+struct Date_t uploadTime_g;
 
 //struct TimeAddr_t tempTimeAddr; //humidityTimeAddr, windSpeedTimeAddr...
 
