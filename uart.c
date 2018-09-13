@@ -652,11 +652,18 @@ void uart1_rx_isr(void)
 	if (UCSR1A & (1 << FE1 | 1 << DOR1 | 1 << UPE1))
 		dummy = UDR1;
 	else*/
+#if 1
+	UINT8 ch;
+	ch = UDR1;
+	uart1_putchar(ch);
+	uart1_cmdParsing(ch);
+#else
 	RXC1_BUFF[RXC1_WR] = UDR1;
 	if (RXC1_WR < (RXC1_BUFF_SIZE - 1))
 		RXC1_WR++;
 	else
 		RXC1_WR = 0;
+#endif
 }
 
 /****************************************************************************

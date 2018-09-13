@@ -237,6 +237,6 @@ void ticker_processCmd(void)
 			processCmd(FetchFifo(&CommandFifo));
 
 		ticker_timer1_handler();
-		uart1_checkCMDPolling();
+		//uart1_checkCMDPolling();
 	}
 }
