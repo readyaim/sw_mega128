@@ -109,7 +109,11 @@ void init_vars(void)
 	dataSample_min_g.sunShineTime.data = 0xFFFF;
 
 	timeStampShot_g.time = initTime;
-	timeStampShot_g.tickeCounter = 0;
+	timeStampShot_g.tickeCounter = 1;
+	timeStampShot_g.currentAddrEEPROM = 0x0000;
+	timeStampShot_g.pageSize = 24*5;		//bytes, 3*8(date6, data2)
+	timeStampShot_g.flag = 1;
+
     CommandFifo.IsEmpty = IsEmpty;
     CommandFifo.AddFifo = AddFifo;
     CommandFifo.FetchFifo = FetchFifo;

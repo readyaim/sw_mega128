@@ -157,6 +157,9 @@ typedef struct DataSeries_t {
 typedef struct TimeStamp_t {
 	Date_t time;
 	UINT32 tickeCounter;
+	UINT16 currentAddrEEPROM;
+	UINT16 pageSize;
+	UINT8 flag;		//1, new Time is updated, for get_current_time()
 }TimeStamp_t;
 extern struct TimeStamp_t timeStampShot_g;
 

@@ -11,7 +11,6 @@ extern void init_devices_timer1(void);
 extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
-extern void update_timeStampShot(void);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -51,8 +50,7 @@ void processCmd(UINT8 data)
             find_key(data & 0x0F);
             break;
 		case UPDATETIME:
-			/* Update time to timeStampShot_g*/
-			update_timeStampShot();
+			/* not used*/
 			
 			break;
         case CollectData:
@@ -91,6 +89,14 @@ void processCmd(UINT8 data)
 				dataSample_min_g.temp.data = 0xFFFF;
 				dataSample_max_g.humidity.data = 0;
 				dataSample_min_g.humidity.data = 0xFFFF;
+				dataSample_max_g.rain.data = 0;
+				dataSample_min_g.rain.data = 0xFFFF;
+				dataSample_max_g.evaporation.data = 0;
+				dataSample_min_g.evaporation.data = 0xFFFF;
+				dataSample_max_g.sunShineTime.data = 0;
+				dataSample_min_g.sunShineTime.data = 0xFFFF;
+				//dataSample_max_g.humidity.data = 0;
+				//dataSample_min_g.humidity.data = 0xFFFF;
 
 				break;
 			case 1:

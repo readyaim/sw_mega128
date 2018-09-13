@@ -9,8 +9,8 @@
 
 
 //#define _DATA_COLLECT_DEBUG
-//enum TransIntervalMode_t transInterval = 5;
-UINT8 transInterval = 3;
+//enum TransIntervalMode_t transInterval_g = 5;
+UINT8 transInterval_g = 3;
 extern UINT16 get_data_adc(UINT8 channel);
 
 /*******************************************************************************
@@ -35,21 +35,6 @@ UINT16 get_data(UINT8 channel)
 }
 
 
-/*******************************************************************************
-* Function:      update_timeStampShot()
-* Arguments:   
-* Return:		  
-* Description:  Upate the time/tickcount of timeStampShot
-*******************************************************************************/
-void update_timeStampShot(void)
-{
-	Date_t newTime = { 20,18, 9,12,15,20 };
-	TimeStamp_t  lasttimeStampShot;
-	UINT32 newTickCount;
-	timeStampShot_g.time = newTime;
-	timeStampShot_g.tickeCounter = SystemTickCount;
-	
-}
 
 /*******************************************************************************
 * Function:      get_current_time()
@@ -74,17 +59,29 @@ Date_t get_current_time(UINT32 currentTickCout)
 	Date_t  newTime;
 	UINT32 tickCounterDiff = 0;
 	UINT32 tmp_day, tmp_hour, tmp_min;
-	if (currentTickCout >= timeStampShot_g.tickeCounter)
+	static TimeStamp_t timeStamp_s;
+	static flag = 0;
+	if (timeStampShot_g.flag == 1)
 	{
-		tickCounterDiff = currentTickCout - timeStampShot_g.tickeCounter;
+		timeStampShot_g.flag = 0;
+		timeStamp_s = timeStampShot_g;
+	}
+
+	if (currentTickCout == timeStamp_s.tickeCounter)
+	{
+		return timeStamp_s.time;
+	}
+	else if (currentTickCout > timeStamp_s.tickeCounter)
+	{
+		tickCounterDiff = currentTickCout - timeStamp_s.tickeCounter;
 	}
 	else
 	{
 		//TODO, exception when tickcouter overflow.
-		tickCounterDiff = 4294967295 - timeStampShot_g.tickeCounter + currentTickCout;
+		tickCounterDiff = 4294967295 - timeStamp_s.tickeCounter + currentTickCout;
 		//NOP();
 	}
-	newTime = timeStampShot_g.time;	//copy time to new time
+	newTime = timeStamp_s.time;	//copy time to new time
 	//TODO caculate difference.
 
 	//1s: 5tick
@@ -137,21 +134,31 @@ Date_t get_current_time(UINT32 currentTickCout)
 		newTime.year1 += 1;
 	}
 
-	//Update timeStampShot_g
-	timeStampShot_g.time = newTime;
-	timeStampShot_g.tickeCounter = currentTickCout;
+	//Update timeStamp_s
+	timeStamp_s.time = newTime;
+	timeStamp_s.tickeCounter = currentTickCout;
 	return newTime;
 	//#endif
 }
 
 /*******************************************************************************
-* Function:      get_addr()
-* Arguments:
-* Return:
+* Function:      get_address()
+* Arguments:   (timeStampShot_g)
+* Return:		  the start address of data for target date(Date_t)
 * Description:  calc address offset with Time
 *******************************************************************************/
-UINT16 get_addr(Date_t *time, TimeStamp_t *timestamp)
+UINT16 get_address(Date_t *targetTime)
 {
+	UINT16 addr_estimate;
+	INT32 interval;
+	//TODO: make sure targetTime is older than timeStampShot
+
+	interval = (timeStampShot_g.time.day - targetTime->day) * 24 * 60/ transInterval_g +
+		(timeStampShot_g.time.hour - targetTime->hour) * 60/ transInterval_g +
+		(timeStampShot_g.time.min - targetTime->min)/ transInterval_g;
+	addr_estimate = timeStampShot_g.currentAddrEEPROM;
+	addr_estimate -= interval / timeStampShot_g.pageSize;
+	return addr_estimate;
 	NOP();
 }
 /*******************************************************************************
@@ -441,7 +448,7 @@ void ticker_timer1_handler(void)
 				get_series_data_1min();
 				process_series_data_1min(currentTickCount);
 			}
-			if (currentTickCount % (transInterval * 300) == 0)
+			if (currentTickCount % (transInterval_g * 300) == 0)
 			{
 				// TODO: Possible to miss 1 tick. need to modify to be robust
 				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)

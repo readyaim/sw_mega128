@@ -169,8 +169,33 @@ void write_dataSeries2eeprom(void)
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.humidity);
 	addr_write_eeprom += 8;
+
+	/* sunShineTime */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
+	addr_write_eeprom += 8;
+
+	/* rain */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.rain);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.rain);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
+	addr_write_eeprom += 8;
+
+	/* evaporation */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.evaporation);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.evaporation);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.evaporation);
+	addr_write_eeprom += 8;
+
 	//TODO: solve addr_write_eeprom overflow
-	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE)
+	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize)
 	{
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
