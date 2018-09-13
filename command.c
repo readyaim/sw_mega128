@@ -11,7 +11,7 @@ extern void init_devices_timer1(void);
 extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
-extern void read_eeprom_to_UART1buffer(UINT8 addr);
+extern void read_eeprom_to_UART1buffer(UINT16 addr);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -103,6 +103,7 @@ void processCmd(UINT8 data)
 				break;
 			case 1:
 				//Upload data
+				printf("run 0x51\r\n");
 				addr_eeprom = get_address(uploadTime_g);
 				read_eeprom_to_UART1buffer(addr_eeprom);
 				break;

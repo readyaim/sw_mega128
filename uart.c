@@ -426,14 +426,14 @@ void uart1_cmdParsing(UINT8 ch)
 			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
 			//printf("character %c is received\r\n", ch);
 		}
-		else if (ch = '!')
+		else if (ch == '!')
 		{
 			//Time commands are coming.
 			state = 1;				//to next state machine.
 			char_index = 0;		//initiation
 			tickcoutStart = SystemTickCount;		//timeout counter
 		}
-		else if (ch = '"')
+		else if (ch == '"')
 		{
 			//request upload data with attached time
 			state = 2;
@@ -504,9 +504,7 @@ void uart1_cmdParsing(UINT8 ch)
 				uploadTime_g.day = *(str + i + 6) * 10 + *(str + i + 7) - 48 * 11;
 				uploadTime_g.hour = *(str + i + 8) * 10 + *(str + i + 9) - 48 * 11;
 				uploadTime_g.min = *(str + i + 10) * 10 + *(str + i + 11) - 48 * 11;
-				//addr_eeprom = get_address(uploadTime_g);
-				//read_eeprom_to_UART1buffer(addr_eeprom);
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x23);	//add to fifo, read eeprom commands
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);	//add to fifo, read eeprom commands
 				state = 0;
 				printf("upload data is requested\r\n");
 
@@ -697,7 +695,7 @@ void uart1_rx_isr(void)
 #if 1
 	UINT8 ch;
 	ch = UDR1;
-	uart1_putchar(ch);
+	//uart1_putchar(ch);
 	uart1_cmdParsing(ch);
 #else
 	RXC1_BUFF[RXC1_WR] = UDR1;
