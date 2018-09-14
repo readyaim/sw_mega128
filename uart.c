@@ -1,12 +1,12 @@
-/***************************************************************************/
-/*串口0测试程序							                                   */
-/*目标器件：ATmega 128   						                           */
-/*晶振:RC 8MHZ								                               */
-/*编译环境：ICCAVR 7.22 						                           */
-/*运行寿命：打开串口测试软件输入t，回车看到test ok 0123456789              */
-/*时间：2012年08月08日                                                     */
-/*作者：涛仔工作室
-/***************************************************************************/
+/****************************************************************************
+* File name: uart.c
+* Description: driver for uart0 and uart1, both polling and interrupt.
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
 
 /*********************************包含头文件********************************/
 #include "global.h"
@@ -294,6 +294,7 @@ int uart0_putcharBackup(char ch)
 * Returns: :
 * Descriptions:  Send out a data through uart0. used for printf()
 *******************************************************************************/
+#if 0
 int putchar(char ch)
 {
 	//while (!(Get_Bit(UCSR0A, UDRE0)));  //if UDRE0=1, Tx buffer is ready for next transmit.
@@ -307,6 +308,33 @@ int putchar(char ch)
 	//UCSR0B |= (1 << UDRIE0);          //开启UDRE中断
 	Set_Bit(UCSR0B, UDRIE0);          //开启UDRE中断
 	return 0;
+}
+#else
+extern int _textmode;
+int putchar(char c)
+{
+	if (_textmode && c == '\n')
+		putchar('\r');
+	/* Wait for empty transmit buffer */
+	while (!(UCSR0A & (1 << UDRE0)))
+		;
+	/* Putting data into buffer , sends the data */
+	UDR0 = c;
+	return c;
+}
+#endif
+
+/*******************************************************************************
+* Function Name: : getchar()
+* Arguments:
+* Returns: :
+* Descriptions:  get a data through uart0. used for printf()
+*******************************************************************************/
+int getchar(void)
+{
+	while ((UCSR0A & 0x80) == 0)
+		;
+	return UDR0;
 }
 
 
@@ -396,6 +424,25 @@ void uart1_gets(UINT8 *rcv)
 	}
 }
 
+/*******************************************************************************
+* Function:     uart1_TimeParsing()
+* Arguments:  str: the date(Y,Y,M,D,H,M), the length of string is 6.
+					 pdateTime: the pointer to Time
+* Return:		 0: no error, 1 wrong input.
+* Description:  transfer str[6](in hex) to Date_t
+*******************************************************************************/
+void uart1_TimeParsing(UINT8 *str, Date_t *pdateTime)
+{
+	pdateTime->year1 = *str;
+	pdateTime->year = *(str + 1);
+	pdateTime->mon = *(str + 2);
+	pdateTime->day = *(str + 3);
+	pdateTime->hour = *(str + 4);
+	pdateTime->min = *(str + 5);
+	printf("new time is %d,%d:%d\r\n", pdateTime->day, pdateTime->hour, pdateTime->min);
+
+}
+
 
 /*******************************************************************************
 * Function:     uart1_cmdParsing()
@@ -426,6 +473,11 @@ void uart1_cmdParsing(UINT8 ch)
 			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
 			//printf("character %c is received\r\n", ch);
 		}
+		else if (ch >= 0x40 && ch <= 0x43)
+		{
+			//update transInterval_g
+			(*CommandFifo.AddFifo)(&CommandFifo, ch);
+		}
 		else if (ch == '!')
 		{
 			//Time commands are coming.
@@ -443,28 +495,20 @@ void uart1_cmdParsing(UINT8 ch)
 
 	case 1:
 		//multi-char commands
-		if (ch<'0' | ch>'9')
+		if (ch>60)
 		{
 			//non-number is received, quit update Time command mode.
+			printf("non-valid input, quit state %d \r\n", state);
 			state = 0;
-			printf("non-num received, quit \r\n");
 		}
 		else
 		{
 			//Update timeStampShot_g
 			str[char_index++] = ch;
-			if (char_index > 11)
+			if (char_index > 5)
 			{
 				//TODO:
-				newTime.year1 = *(str + i) * 10 + *(str + i + 1) - 48 * 11;
-				newTime.year = *(str + i + 2) * 10 + *(str + i + 3) - 48 * 11;
-				newTime.mon = *(str + i + 4) * 10 + *(str + i + 5) - 48 * 11;
-				newTime.day = *(str + i + 6) * 10 + *(str + i + 7) - 48 * 11;
-				newTime.hour = *(str + i + 8) * 10 + *(str + i + 9) - 48 * 11;
-				newTime.min = *(str + i + 10) * 10 + *(str + i + 11) - 48 * 11;
-				//newTime.min % transInterval_g
-				printf("new min is %d\r\n", newTime.min);
-				timeStampShot_g.time = newTime;
+				uart1_TimeParsing(str, &timeStampShot_g.time);
 				timeStampShot_g.tickeCounter = SystemTickCount;
 				timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;
 				timeStampShot_g.flag = 1;		//new timeStamp, update get_current_time
@@ -474,50 +518,28 @@ void uart1_cmdParsing(UINT8 ch)
 
 			}
 		}
-		/*
-		if (TimeIsUp(tickcoutStart, 15))
-		{
-			state = 0;
-			printf("timeout, state=0\r\n");
-		}
-		*/
 		break;
 	case 2:
 		//multi-char commands
-		if (ch<'0' | ch>'9')
+		if (ch > 60)
 		{
 			//non-number is received, quit update Time command mode.
+			printf("non-valid input, quit state %d \r\n", state);
 			state = 0;
-			printf("non-num received, quit \r\n");
 		}
 		else
 		{
 			//Update timeStampShot_g
 			str[char_index++] = ch;
-			if (char_index > 11)
+			if (char_index > 5)
 			{
 				//TODO:
-				i = 0;
-				uploadTime_g.year1 = *(str + i) * 10 + *(str + i + 1) - 48 * 11;
-				uploadTime_g.year = *(str + i + 2) * 10 + *(str + i + 3) - 48 * 11;
-				uploadTime_g.mon = *(str + i + 4) * 10 + *(str + i + 5) - 48 * 11;
-				uploadTime_g.day = *(str + i + 6) * 10 + *(str + i + 7) - 48 * 11;
-				uploadTime_g.hour = *(str + i + 8) * 10 + *(str + i + 9) - 48 * 11;
-				uploadTime_g.min = *(str + i + 10) * 10 + *(str + i + 11) - 48 * 11;
+				uart1_TimeParsing(str, &uploadTime_g);
 				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);	//add to fifo, read eeprom commands
 				state = 0;
 				printf("upload data is requested\r\n");
-
 			}
 		}
-		/*
-		if (TimeIsUp(tickcoutStart, 15))
-		{
-		state = 0;
-		printf("timeout, state=0\r\n");
-		}
-		*/
-		break;
 	default:
 		break;
 	}
@@ -807,7 +829,18 @@ Descriptions: transfer char to int
 ****************************************************************************/
 void test_copystr2TimeStamp(void)
 {
-	UINT8 *s = "!20180a121530";
+	UINT8 str[8], *s;
+	//!1412090C1100;
+	s = str;
+	s[0] = '"';
+	s[1] = 0x14;
+	s[2] = 0x12;
+	s[3] = 0xA;
+	s[4] = 0xB;
+	s[5] = 0x12;
+	s[6] = 0x2E;
+	s[7] = 0;
+
 	while (*s)
 	{
 		uart1_cmdParsing(*s++);

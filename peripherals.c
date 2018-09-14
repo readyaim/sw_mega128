@@ -1,7 +1,10 @@
 /****************************************************************************
 * File name: peripherals.c
 * Description: includes functions for LED, SEG, BEEP
-* Created: 20180901
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
 * Author: s.z.
 ****************************************************************************/
 

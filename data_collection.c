@@ -1,6 +1,9 @@
 /****************************************************************************
 * File name: data_collection.c
 * Description: data collection
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
 * Created: 20180907
 * Author: s.z.
 ****************************************************************************/
@@ -9,6 +12,7 @@
 
 
 //#define _DATA_COLLECT_DEBUG
+//#define _PRINT_ADC
 //enum TransIntervalMode_t transInterval_g = 5;
 UINT8 transInterval_g = 3;
 extern UINT16 get_data_adc(UINT8 channel);
@@ -157,7 +161,11 @@ UINT16 get_address(Date_t *targetTime)
 		(timeStampShot_g.time.hour - targetTime->hour) * 60/ transInterval_g +
 		(timeStampShot_g.time.min - targetTime->min)/ transInterval_g;
 	addr_estimate = timeStampShot_g.currentAddrEEPROM;
-	addr_estimate -= interval / timeStampShot_g.pageSize;
+	addr_estimate -= interval * timeStampShot_g.pageSize;
+	
+	printf("interval is %d\r\n", interval);
+	printf("addr_estimate is %d\r\n", addr_estimate);
+
 	return addr_estimate;
 	NOP();
 }
@@ -182,8 +190,10 @@ void get_series_data_10sec(DataSeries_t *dataseries)
 	UINT16 data;
 	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
 	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
+#ifdef _PRINT_ADC
 	printf("temp is %d mv\r\n", dataseries->temp);
 	printf("humidity is %d mv\r\n", dataseries->humidity);
+#endif
 	//TODO: others data sampling
 
 #endif // _DATA_COLLECT_DEBUG
@@ -207,9 +217,11 @@ void get_series_data_1min(void)
 	dataSample_g.rain.data = n;
 	dataSample_g.evaporation.data = m;
 	dataSample_g.sunShineTime.data = o;
+#ifdef _PRINT_ADC
 	printf("rain is %d mv\r\n", n);
 	printf("evaporation is %d mv\r\n", m);
 	printf("sunShineTime is %d mv\r\n", o);
+#endif
 	n += 3;
 	m += 2;
 	o += 20;
@@ -313,7 +325,9 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 	//3. average 4 remoains data
 	//4. save to eeprom data struct in (time, data) to buffer
 	dataSample_g.temp.data = (UINT16)(datasum >> 2);	//divide 4
+#ifdef _PRINT_ADC
 	printf("temperature sum is %d \r\n", datasum);
+#endif
 	dataSample_g.temp.time = get_current_time(currentTickCount);
 	// 5. save max and min, with time
 	if (dataSample_g.temp.data > dataSample_max_g.temp.data)
@@ -353,8 +367,11 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 		datasum += dataseries[i].humidity;
 	}
 	dataSample_g.humidity.data = (UINT16)(datasum >> 2);	//divide 4
+#ifdef _PRINT_ADC
 	printf("humidity sum is %d \r\n", datasum);
+#endif
 	dataSample_g.humidity.time = get_current_time(currentTickCount);
+
 
 	if (dataSample_g.humidity.data > dataSample_max_g.humidity.data)
 	{
@@ -459,6 +476,18 @@ void ticker_timer1_handler(void)
 	}
 }
 
-
+/*******************************************************************************
+* Function:      test_get_address()
+* Arguments:
+* Return:
+* Description:  
+*******************************************************************************/
+void test_get_address(void)
+{
+	Date_t targetTime = { 20,18,9,12,17,5 };
+	UINT16 addr;
+	addr = get_address(&targetTime);
+	NOP();
+}
 
 

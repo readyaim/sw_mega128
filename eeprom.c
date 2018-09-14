@@ -1,12 +1,15 @@
 /****************************************************************************
 * File name: eeprom.c
 * Description: includes functions for EEPROM
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
 * Created: 20180907
 * Author: s.z.
 ****************************************************************************/
 
 #include "global.h"
-
+#include <eeprom.h>
 
 
 
@@ -293,7 +296,7 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 	UINT8 data, i;
 	//TODO
 	//1. make sure buffer is empty
-	for (i = 0; i <= timeStampShot_g.pageSize; i++)
+	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
 		data = EEPROM_read(addr++);
 		//TODO: transfer dec to str
@@ -318,17 +321,20 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 *******************************************************************************/
 void test_EEPROM(void)
 {
-    UINT8 i=0;
-    UINT8 data;
+    UINT16 i=0;
+    UINT16 data;
+	void *p;
+	p = &data;
 	for (i = 0; i < 10; i++)
 	{
-		data = EEPROM_read((UINT16)i);
+		EEPROM_READ(i, data);
 		printf("data@%d is  %d \r\n", i, data);
 	}
 	
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < 10;)
     {
-        EEPROM_write((UINT16)i, i+1);
+        EEPROM_WRITE(i, i);
+		i += 2;
     }
 
 }

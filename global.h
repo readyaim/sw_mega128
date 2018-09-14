@@ -1,3 +1,13 @@
+/****************************************************************************
+* File name: global.h
+* Description: global head file
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
+
 #include <stdio.h>
 //#include <iom64v.h>
 #include <iom128v.h>
@@ -33,7 +43,7 @@
 #define GENERAL 0
 #define UPDATETIME 2
 #define ShowNumOnLED 3
-#define CollectData 4
+#define UPDATE_transInterval_g 4
 #define SAVE2EEPROM 5
 #define READEEPROM 6
 
@@ -68,7 +78,7 @@ extern void delay_ms(UINT16 millisecond);
 #define DAYTICKERTIME (12*60*60*1000/TICKERTIME)
 #define HOURTICKERTIME (60*60*1000/TICKERTIME)
 #define MINTICKERTIME (60*1000/TICKERTIME)
-
+extern UINT8 transInterval_g;
 
 
 

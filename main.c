@@ -1,15 +1,13 @@
-//ICC-AVR application builder : 2012/2/13 20:52:33
-/*******************************************************************************
-* from Home-Win7, work-HP
-* 单片机:   ATMAGE128A AU 1036
-* 晶振:     外部8MHz
-* 编译器:   ICC 7.22
-*
-* 文件名:   main.c
-* 版本:     1.0
-* 完成日期:
-* Description:  在8M晶振下,实现键盘指示数码管操作
-*******************************************************************************/
+/****************************************************************************
+* File name: main.c
+* Description: main files for data collection system.
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
+
 /*********************************包含头文件********************************/
 #include "global.h"
 //#include "peripherals.h"
@@ -44,6 +42,7 @@ extern void init_uart0(void);
 extern void uart1_init(void);
 extern void test_timer1(void);
 extern void test_EEPROM(void);
+extern  void test_get_address(void);
 
 
 #ifdef _DUMMY_CODE
@@ -76,7 +75,7 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 
 void init_vars(void)
 {
-	struct Date_t initTime = {20,18,9,12,17,0};
+	struct Date_t initTime = {20,18,9,14,23,11};
 
 
     SystemTickCount = 1;
@@ -146,8 +145,14 @@ void main(void)
     //test_timer1();
     //collectADC0();
     //test_EEPROM();
-	ticker_processCmd();
+	//(*CommandFifo.AddFifo)(&CommandFifo, 'B');	//add to fifo, read eeprom commands
 	//test_copystr2TimeStamp();
+	//test_get_address();
+	
+	
+	ticker_processCmd();
+	
+	
 
 
     

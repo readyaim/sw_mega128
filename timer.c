@@ -1,3 +1,12 @@
+/****************************************************************************
+* File name: timer.c
+* Description: driver for TC0, TC1, TC2, TC3. TC1 used as system ticker generator every 200ms.
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
 #include "global.h"
 #include "peripherals.h"
 #include "fifo.h"

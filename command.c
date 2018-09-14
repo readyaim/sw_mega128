@@ -1,3 +1,12 @@
+/****************************************************************************
+* File name: command.c
+* Description: polling commands in FIFO in main while. And run the cmd.
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
 #include "global.h"
 #include "fifo.h"
 
@@ -55,23 +64,25 @@ void processCmd(UINT8 data)
 			/* not used*/
 			
 			break;
-        case CollectData:
-            switch (data & 0x0f)
+        case UPDATE_transInterval_g:
+            switch (para)
             {
-                case 1: 
-                    //'A'
-                    NOP(); 
-                    // read temperature
+                case 0: 
+					transInterval_g = 5;
                     break;
-                case 2:
-                    //'B'
-                    NOP();
-                    // read humidity
+                case 1:
+					transInterval_g = 10;
                     break;
-                case 3: //Reset(); break;
+                case 2: 
+					transInterval_g = 30; 
+					break;
+				case 3:
+					transInterval_g = 60;
+					break;
                 default://printf("Illegal command!!\r\n"); 
                     break;
             }
+			printf("transInterval_g = %d\n", transInterval_g);
             break;
         case SAVE2EEPROM:
             //SelectedChannelNo = data & 0x3f;
@@ -160,6 +171,24 @@ void processCmd(UINT8 data)
         
 
         case SETCCPWM:
+			/*
+			switch (para)
+			{
+			case 0:
+				//'A'
+				NOP();
+				// read temperature
+				break;
+			case 2:
+				//'B'
+				NOP();
+				// read humidity
+				break;
+			case 3: //Reset(); break;
+			default://printf("Illegal command!!\r\n"); 
+				break;
+			}
+			*/
             //AdjustCCPWM(data & 0x1f);
             break;
         default:break;

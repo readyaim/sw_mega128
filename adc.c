@@ -1,3 +1,13 @@
+/****************************************************************************
+* File name: adc.c
+* Description: driver for adc on chip.
+* MCU: ATmega128A AU 1036
+* Crystal: External 8MHz
+* Compile: ICCAVR 7.22
+* Created: 20180907
+* Author: s.z.
+****************************************************************************/
+
 #include "global.h"
 #include "peripherals.h"
 
