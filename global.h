@@ -60,7 +60,7 @@
 
 /* uart.h start*/
 #define RXC1_BUFF_SIZE 128   //接受缓冲区字节数
-#define TXC1_BUFF_SIZE 128   //发送缓冲区字节数
+#define TXC1_BUFF_SIZE 256   //发送缓冲区字节数
 extern UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
 extern UINT8 TXC1_RD;   //发送缓冲区读指针
 extern UINT8 TXC1_WR;   //发送缓冲区写指针

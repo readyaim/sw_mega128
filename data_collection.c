@@ -157,12 +157,12 @@ UINT16 get_address(Date_t *targetTime)
 	INT32 interval;
 	//TODO: make sure targetTime is older than timeStampShot
 
-	interval = (timeStampShot_g.time.day - targetTime->day) * 24 * 60/ transInterval_g +
-		(timeStampShot_g.time.hour - targetTime->hour) * 60/ transInterval_g +
-		(timeStampShot_g.time.min - targetTime->min)/ transInterval_g;
+	interval = (timeStampShot_g.time.day - targetTime->day) * 24 * 60 / transInterval_g +
+		(timeStampShot_g.time.hour - targetTime->hour) * 60 / transInterval_g +
+		(timeStampShot_g.time.min - targetTime->min) / transInterval_g;
 	addr_estimate = timeStampShot_g.currentAddrEEPROM;
 	addr_estimate -= interval * timeStampShot_g.pageSize;
-	
+
 	printf("interval is %d\r\n", interval);
 	printf("addr_estimate is %d\r\n", addr_estimate);
 
@@ -182,14 +182,29 @@ void get_series_data_10sec(DataSeries_t *dataseries)
 	// for debug only
 	static UINT16 n = 0xA;
 	static UINT16 m = 1301;
+	
+
 	dataseries->temp = n++;		//ADC0, temperature
 	dataseries->humidity = m++;		//ADC1, humidity
+
+
 	//return n++;
 #else
 	//for ADC0 sampling
 	UINT16 data;
+	static UINT16 o = 5000;
+	static UINT16 p = 6000;
+	static UINT16 q = 7000;
 	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
 	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
+	dataseries->airPressure = o++;		//ADC0, temperature
+	dataseries->groundTemp = p++;		//ADC1, humidity
+	dataseries->radiation = q++;		//ADC1, humidity
+
+	o += 30;
+	p += 40;
+	q += 50;
+
 #ifdef _PRINT_ADC
 	printf("temp is %d mv\r\n", dataseries->temp);
 	printf("humidity is %d mv\r\n", dataseries->humidity);
@@ -213,10 +228,12 @@ void get_series_data_1min(void)
 	static UINT16 n = 200;
 	static UINT16 m = 50;
 	static UINT16 o = 3000;
-	
+
 	dataSample_g.rain.data = n;
 	dataSample_g.evaporation.data = m;
 	dataSample_g.sunShineTime.data = o;
+
+
 #ifdef _PRINT_ADC
 	printf("rain is %d mv\r\n", n);
 	printf("evaporation is %d mv\r\n", m);
@@ -382,7 +399,140 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 	{
 		dataSample_min_g.humidity = dataSample_g.humidity;
 	}
-	
+
+
+	/* init values*/
+	maxdata = 0;
+	mindata = 0xFFFF;
+	datasum = 0;
+
+	/* airPressure */
+	for (i = 0; i <= 5; i++)
+	{
+		if (dataseries[i].airPressure > maxdata)
+		{
+			max_index = i;
+			maxdata = dataseries[i].airPressure;
+		}
+		//TODO: should be else if
+		if (dataseries[i].airPressure < mindata)
+		{
+			min_index = i;
+			mindata = dataseries[i].airPressure;
+		}
+	}
+	//printf("airPressure: max_index is %d, min_index is %d\r\n", max_index, min_index);
+	dataseries[min_index].airPressure = 0;
+	dataseries[max_index].airPressure = 0;
+	for (i = 0; i <= 5; i++)
+	{
+		datasum += dataseries[i].airPressure;
+	}
+	dataSample_g.airPressure.data = (UINT16)(datasum >> 2);	//divide 4
+#ifdef _PRINT_ADC
+	printf("airPressure sum is %d \r\n", datasum);
+#endif
+	dataSample_g.airPressure.time = get_current_time(currentTickCount);
+
+
+	if (dataSample_g.airPressure.data > dataSample_max_g.airPressure.data)
+	{
+		dataSample_max_g.airPressure = dataSample_g.airPressure;
+	}
+	//TODO: should be else if
+	if (dataSample_g.airPressure.data < dataSample_min_g.airPressure.data)
+	{
+		dataSample_min_g.airPressure = dataSample_g.airPressure;
+	}
+
+	/* init values*/
+	maxdata = 0;
+	mindata = 0xFFFF;
+	datasum = 0;
+
+	/* groundTemp */
+	for (i = 0; i <= 5; i++)
+	{
+		if (dataseries[i].groundTemp > maxdata)
+		{
+			max_index = i;
+			maxdata = dataseries[i].groundTemp;
+		}
+		//TODO: should be else if
+		if (dataseries[i].groundTemp < mindata)
+		{
+			min_index = i;
+			mindata = dataseries[i].groundTemp;
+		}
+	}
+	//printf("groundTemp: max_index is %d, min_index is %d\r\n", max_index, min_index);
+	dataseries[min_index].groundTemp = 0;
+	dataseries[max_index].groundTemp = 0;
+	for (i = 0; i <= 5; i++)
+	{
+		datasum += dataseries[i].groundTemp;
+	}
+	dataSample_g.groundTemp.data = (UINT16)(datasum >> 2);	//divide 4
+#ifdef _PRINT_ADC
+	printf("groundTemp sum is %d \r\n", datasum);
+#endif
+	dataSample_g.groundTemp.time = get_current_time(currentTickCount);
+
+
+	if (dataSample_g.groundTemp.data > dataSample_max_g.groundTemp.data)
+	{
+		dataSample_max_g.groundTemp = dataSample_g.groundTemp;
+	}
+	//TODO: should be else if
+	if (dataSample_g.groundTemp.data < dataSample_min_g.groundTemp.data)
+	{
+		dataSample_min_g.groundTemp = dataSample_g.groundTemp;
+	}
+
+	/* init values*/
+	maxdata = 0;
+	mindata = 0xFFFF;
+	datasum = 0;
+
+	/* radiation */
+	for (i = 0; i <= 5; i++)
+	{
+		if (dataseries[i].radiation > maxdata)
+		{
+			max_index = i;
+			maxdata = dataseries[i].radiation;
+		}
+		//TODO: should be else if
+		if (dataseries[i].radiation < mindata)
+		{
+			min_index = i;
+			mindata = dataseries[i].radiation;
+		}
+	}
+	//printf("radiation: max_index is %d, min_index is %d\r\n", max_index, min_index);
+	dataseries[min_index].radiation = 0;
+	dataseries[max_index].radiation = 0;
+	for (i = 0; i <= 5; i++)
+	{
+		datasum += dataseries[i].radiation;
+	}
+	dataSample_g.radiation.data = (UINT16)(datasum >> 2);	//divide 4
+#ifdef _PRINT_ADC
+	printf("radiation sum is %d \r\n", datasum);
+#endif
+	dataSample_g.radiation.time = get_current_time(currentTickCount);
+
+
+	if (dataSample_g.radiation.data > dataSample_max_g.radiation.data)
+	{
+		dataSample_max_g.radiation = dataSample_g.radiation;
+	}
+	//TODO: should be else if
+	if (dataSample_g.radiation.data < dataSample_min_g.radiation.data)
+	{
+		dataSample_min_g.radiation = dataSample_g.radiation;
+	}
+
 
 }
 /*******************************************************************************
@@ -400,68 +550,79 @@ void ticker_timer1_handler(void)
 	static struct DataSeries_t dataseries[6];
 	UINT8 i;
 	UINT16 maxdata = 0, mindata = 0, max_index = 0, min_index = 0;
-	UINT32 currentTickCount = 0,tickCountDiff = 0;
+	UINT32 currentTickCount = 0, tickCountDiff = 0;
 	UINT32 datasum = 0;
 	static UINT32 lastTickCount = 0xFFFF;
 
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
-	if (currentTickCount % tick_divider == 0)
+	if (currentTickCount % 5 == 0)
 	{
 		if (lastTickCount != currentTickCount)
 		{
 			lastTickCount = currentTickCount;
-			switch (data_index)
+			//TODO: wind direction and wind speed
 			{
-			case 5:
-				/*get 3rd data*/
-				get_series_data_10sec(&dataseries[data_index]); 
-				data_index = 0;
-				process_series_data_10sec(dataseries, currentTickCount );
-				/*
-				//Caculate howmany tick does it need
-				tickCountDiff = SystemTickCount - currentTickCount;
-				printf("TickCountDiff for case5 is %x\r\n", tickCountDiff);
-				*/
-				break;
-			case 4:
-				/*get 2nd data*/
-				get_series_data_10sec(&dataseries[data_index]);
-				//data[data_index] = get_data(0x0);
-				data_index++;
-				break;
-			case 3:
-				/*get 2nd data*/
-				get_series_data_10sec(&dataseries[data_index]); 
-				//data[data_index] = get_data(0x0);
-				data_index++;
-				break;
-			case 2:
-				/*get 2nd data*/
-				//data[data_index] = get_data(0x0);
-				get_series_data_10sec(&dataseries[data_index]);
-				data_index++;
-				break;
-			case 1:
-				/*get 2nd data*/
-				get_series_data_10sec(&dataseries[data_index]);
-				//data[data_index] = get_data(0x0);
-				data_index++;
-				break;
-			case 0:
-				/*get 1st data*/
-				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
-				printf(".....1st data......\r\n");
-				get_series_data_10sec(&dataseries[data_index]);
-				data_index++;
-				break;
-			default:
-				NOP();
-				//printf("Illegal MeterAndSensorMode!!\r\n"); break;
+
+			}
+
+			if (currentTickCount % tick_divider == 0)
+			{
+				//
+				switch (data_index)
+				{
+					//temp, humidity, airPressure, groundTemp, radiation
+				case 5:
+					/*get 3rd data*/
+					get_series_data_10sec(&dataseries[data_index]);
+					data_index = 0;
+					process_series_data_10sec(dataseries, currentTickCount);
+					/*
+					//Caculate howmany tick does it need
+					tickCountDiff = SystemTickCount - currentTickCount;
+					printf("TickCountDiff for case5 is %x\r\n", tickCountDiff);
+					*/
+					break;
+				case 4:
+					/*get 2nd data*/
+					get_series_data_10sec(&dataseries[data_index]);
+					//data[data_index] = get_data(0x0);
+					data_index++;
+					break;
+				case 3:
+					/*get 2nd data*/
+					get_series_data_10sec(&dataseries[data_index]);
+					//data[data_index] = get_data(0x0);
+					data_index++;
+					break;
+				case 2:
+					/*get 2nd data*/
+					//data[data_index] = get_data(0x0);
+					get_series_data_10sec(&dataseries[data_index]);
+					data_index++;
+					break;
+				case 1:
+					/*get 2nd data*/
+					get_series_data_10sec(&dataseries[data_index]);
+					//data[data_index] = get_data(0x0);
+					data_index++;
+					break;
+				case 0:
+					/*get 1st data*/
+					//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
+					printf(".....1st data......\r\n");
+					get_series_data_10sec(&dataseries[data_index]);
+					data_index++;
+					break;
+				default:
+					NOP();
+					//printf("Illegal MeterAndSensorMode!!\r\n"); break;
+				}
 			}
 			//get_data();
 			//ch_show
 			if (currentTickCount % 300 == 0)
 			{// 1min
+				//evaporation, sunShineTime, rain
 				get_series_data_1min();
 				process_series_data_1min(currentTickCount);
 			}
@@ -480,7 +641,7 @@ void ticker_timer1_handler(void)
 * Function:      test_get_address()
 * Arguments:
 * Return:
-* Description:  
+* Description:
 *******************************************************************************/
 void test_get_address(void)
 {

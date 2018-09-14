@@ -111,7 +111,7 @@ void init_vars(void)
 	timeStampShot_g.time = initTime;
 	timeStampShot_g.tickeCounter = 1;
 	timeStampShot_g.currentAddrEEPROM = 0x0000;
-	timeStampShot_g.pageSize = 24*5;		//bytes, 3*8(date6, data2)
+	timeStampShot_g.pageSize = 8*8*3;		//bytes, 3*8(date6, data2)
 	timeStampShot_g.flag = 1;
 
     CommandFifo.IsEmpty = IsEmpty;
