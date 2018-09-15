@@ -96,8 +96,9 @@ void processCmd(UINT8 data)
 				// write data to eeprom
 				printf("write eeprom\r\n");
 				write_dataSeries2eeprom();
-
+				printf("write ends\r\n");
 				//after writing max and min to eeprom, clear max/min value
+				//TODO: use eman max_i, min_i, and array, void *p
 				dataSample_max_g.temp.data = 0;
 				dataSample_min_g.temp.data = 0xFFFF;
 				dataSample_max_g.humidity.data = 0;
@@ -108,9 +109,16 @@ void processCmd(UINT8 data)
 				dataSample_min_g.evaporation.data = 0xFFFF;
 				dataSample_max_g.sunShineTime.data = 0;
 				dataSample_min_g.sunShineTime.data = 0xFFFF;
-				//dataSample_max_g.humidity.data = 0;
-				//dataSample_min_g.humidity.data = 0xFFFF;
-
+				dataSample_max_g.airPressure.data = 0;
+				dataSample_min_g.airPressure.data = 0xFFFF;
+				dataSample_max_g.groundTemp.data = 0;
+				dataSample_min_g.groundTemp.data = 0xFFFF;
+				dataSample_max_g.radiation.data = 0;
+				dataSample_min_g.radiation.data = 0xFFFF;
+				//dataSample_max_g.windSpeed.data = 0;
+				//dataSample_min_g.windSpeed.data = 0xFFFF;
+				//dataSample_max_g.windDirection.data = 0;
+				//dataSample_min_g.windDirection.data = 0xFFFF;
 				break;
 			case 1:
 				//Upload data

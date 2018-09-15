@@ -173,12 +173,29 @@ void write_dataSeries2eeprom(void)
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.humidity);
 	addr_write_eeprom += 8;
 
-	/* sunShineTime */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
+
+	/* airPressure */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.airPressure);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.airPressure);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.airPressure);
+	addr_write_eeprom += 8;
+
+	/* groundTemp */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.groundTemp);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.groundTemp);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.groundTemp);
+	addr_write_eeprom += 8;
+
+	/* radiation */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.radiation);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.radiation);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.radiation);
 	addr_write_eeprom += 8;
 
 	/* rain */
@@ -187,6 +204,14 @@ void write_dataSeries2eeprom(void)
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.rain);
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
+	addr_write_eeprom += 8;
+
+	/* sunShineTime */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
 	addr_write_eeprom += 8;
 
 	/* evaporation */
