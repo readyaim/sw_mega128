@@ -100,9 +100,15 @@ void init_vars(void)
 	dataSample_min_g.temp.data = 0xFFFF;
 	dataSample_max_g.humidity.data = 0;
 	dataSample_min_g.humidity.data = 0xFFFF;
-	
+	dataSample_max_g.airPressure.data = 0;
+	dataSample_min_g.airPressure.data = 0xFFFF;
+	dataSample_max_g.groundTemp.data = 0;
+	dataSample_min_g.groundTemp.data = 0xFFFF;
+	dataSample_max_g.radiation.data = 0;
+	dataSample_min_g.radiation.data = 0xFFFF;
+
 	dataSample_max_g.rain.data = 0;
-	dataSample_min_g.rain.data = 0xFFFF;
+	dataSample_min_g.rain.data = 0;		//it's accumulated value, not minimum value
 	dataSample_max_g.evaporation.data = 0;
 	dataSample_min_g.evaporation.data = 0xFFFF;
 	dataSample_max_g.sunShineTime.data = 0;

@@ -11,7 +11,7 @@
 #include "peripherals.h"
 #include "fifo.h"
 
-//#define _DEBUG_TIMER1
+#define _DEBUG_TIMER1
 //#define _DEBUG_TIMER3
 
 

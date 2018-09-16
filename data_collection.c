@@ -11,9 +11,11 @@
 #include "global.h"
 
 
-//#define _DATA_COLLECT_DEBUG
+#define _DATA_COLLECT_DEBUG
 //#define _PRINT_ADC
 //enum TransIntervalMode_t transInterval_g = 5;
+
+#define _ACCUMULATION_ENABLE
 UINT8 transInterval_g = 3;
 extern UINT16 get_data_adc(UINT8 channel);
 
@@ -170,6 +172,31 @@ UINT16 get_address(Date_t *targetTime)
 	NOP();
 }
 /*******************************************************************************
+* Function:      get_series_data_sec()
+* Arguments:
+* Return:		  data;
+* Description:   collect windDirection, windSpeed
+					   TODO
+*******************************************************************************/
+void get_series_data_sec(UINT16 *data_wind)
+{
+	UINT8 windDirection = 0, windSpeed=1;
+#ifdef _DATA_COLLECT_DEBUG
+	// for debug only
+	static UINT16 n = 7000;
+	static UINT16 m = 8000;
+
+	data_wind[windDirection] = n;		//winDirection collection
+	data_wind[windSpeed] = m;		// windSpeed collection
+	n += 50;
+	m += 90;
+#else
+	data_wind[windDirection] = n;		//winDirection collection
+	data_wind[windSpeed] = m;		// windSpeed collection
+	NOP();
+#endif
+}
+/*******************************************************************************
 * Function:      get_series_data_10sec()
 * Arguments:
 * Return:		  data;
@@ -229,10 +256,12 @@ void get_series_data_1min(void)
 	static UINT16 m = 50;
 	static UINT16 o = 3000;
 
+	//sample data
 	dataSample_g.rain.data = n;
 	dataSample_g.evaporation.data = m;
 	dataSample_g.sunShineTime.data = o;
 
+	
 
 #ifdef _PRINT_ADC
 	printf("rain is %d mv\r\n", n);
@@ -290,7 +319,7 @@ void process_series_data_1min(UINT32 currentTickCount)
 		dataSample_min_g.sunShineTime = dataSample_g.sunShineTime;
 	}
 
-	/* temperature */
+	/* rain */
 	dataSample_g.rain.time = get_current_time(currentTickCount);
 	// save max and min, with time
 	if (dataSample_g.rain.data > dataSample_max_g.rain.data)
@@ -298,10 +327,21 @@ void process_series_data_1min(UINT32 currentTickCount)
 		dataSample_max_g.rain = dataSample_g.rain;
 	}
 	//TODO: should be else if
+#ifdef _ACCUMULATION_ENABLE
+	// not min value, it's accumulated value
+	//calculate accumulated data, which is saved in min_g. (not minimum any more)
+	dataSample_min_g.rain.data += dataSample_g.rain.data;
+	//data is not useful any more, replaced by accumulated value.
+	dataSample_g.rain.data = dataSample_min_g.rain.data;
+	//dataSample_min_g.rain.data needs to be clear to 0 when the data is saved(every 5min)
+	//init dataSample_min_g.rain.data to zero
+#else
+	
 	if (dataSample_g.rain.data < dataSample_min_g.rain.data)
 	{
 		dataSample_min_g.rain = dataSample_g.rain;
 	}
+#endif
 
 }
 /*******************************************************************************
@@ -552,8 +592,14 @@ void ticker_timer1_handler(void)
 	UINT16 maxdata = 0, mindata = 0, max_index = 0, min_index = 0;
 	UINT32 currentTickCount = 0, tickCountDiff = 0;
 	UINT32 datasum = 0;
-	static UINT32 lastTickCount = 0xFFFF;
-
+	static UINT32 lastTickCount = 0xFFFFFFFF;
+	
+	UINT8 n_3s = 3, n_2m = 120, n_10m = 600;
+	static UINT8 flag = 0;
+	UINT8 windDirection=0, windSpeed=1;
+	UINT16 data_wind[2];
+	static UINT8 wind_index = 0;
+	static  UINT16 data_wind_array[2][3], data_3s[2], data_2m[2], data_10m[2];
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
 	if (currentTickCount % 5 == 0)
 	{
@@ -562,8 +608,39 @@ void ticker_timer1_handler(void)
 			lastTickCount = currentTickCount;
 			//TODO: wind direction and wind speed
 			{
+				get_series_data_sec(data_wind);
+				if (flag == 0)
+				{
+					// init data
+					data_3s[windDirection] = data_wind[windDirection];
+					data_wind_array[windDirection][1] = data_wind[windDirection];
+					data_wind_array[windDirection][2] = data_wind[windDirection];
+					data_3s[windSpeed] = data_wind[windSpeed];
+					data_wind_array[windSpeed][1] = data_wind[windSpeed];
+					data_wind_array[windSpeed][2] = data_wind[windSpeed];
+					data_2m[windDirection] = data_wind[windDirection];
+					data_2m[windSpeed] = data_wind[windSpeed];
+					data_10m[windDirection] = data_wind[windDirection];
+					data_10m[windSpeed] = data_wind[windSpeed];
+					flag = 1;
+				}
+			
+				data_wind_array[windDirection][wind_index] = data_wind[windDirection];
+				data_wind_array[windSpeed][wind_index] = data_wind[windSpeed];
+				data_3s[windDirection] = (data_wind_array[windDirection][0] + 
+								data_wind_array[windDirection][1] + 
+								data_wind_array[windDirection][2]) / 3;
+				data_3s[windSpeed] = (data_wind_array[windSpeed][0] +
+					data_wind_array[windSpeed][1] +
+					data_wind_array[windSpeed][2]) / 3;
+				wind_index = (wind_index + 1) & 3;
 
+				data_2m[windDirection] = data_2m[windDirection]+(data_wind[windDirection]  -  data_2m[windDirection]) / 120;
+				data_2m[windSpeed] = data_2m[windSpeed] + (data_wind[windSpeed]  - data_2m[windSpeed]) / 120;
+				data_10m[windDirection] = data_10m[windDirection] + (data_wind[windDirection]  - data_10m[windDirection]) / 600;
+				data_10m[windSpeed] = data_10m[windSpeed]+(data_wind[windSpeed] - data_10m[windSpeed]) / 600;
 			}
+
 
 			if (currentTickCount % tick_divider == 0)
 			{
@@ -631,7 +708,9 @@ void ticker_timer1_handler(void)
 				// TODO: Possible to miss 1 tick. need to modify to be robust
 				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
 				//printf("fifo cmd 0x50: write eeprom commands\r\n");
-
+#ifdef _ACCUMULATION_ENABLE
+				dataSample_min_g.rain.data = 0;		//clear accumulated value every 5min, not minmum value
+#endif
 			}
 		}
 	}
