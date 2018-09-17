@@ -25,6 +25,17 @@ UINT8 ad = 0;//AD采集间隔
 UINT16 ad_data1 = 0, ad_data2 = 0;
 
 
+/*******************************************************************************
+* Function:     choose_ADC_channel()
+* Arguments:
+* Return:
+* Description:  Choose adc channel. choose adc0 when channel==0x00, adc01 when 0x01.
+Only 1 channel is allowed in one time. Need to add excepion TODO
+*******************************************************************************/
+void choose_ADC_channel(UINT8 channel)
+{
+	ADMUX = (ADMUX & 0xE0) | channel;
+}
 
 //I、O口初始化
 void init_port_adc0(void)
@@ -103,17 +114,7 @@ void ad_start_conversion(void)
     Set_Bit(ADCSRA, ADSC);  //启动转换
 }
 
-/*******************************************************************************
-* Function:     choose_ADC_channel()
-* Arguments:
-* Return:
-* Description:  Choose adc channel. choose adc0 when channel==0x00, adc01 when 0x01.
-                      Only 1 channel is allowed in one time. Need to add excepion TODO
-*******************************************************************************/
-void choose_ADC_channel(UINT8 channel)
-{
-    ADMUX = (ADMUX & 0xE0) | channel;
-}
+
 /*******************************************************************************
 * Function:     ad_conversion_polling()
 * Arguments:

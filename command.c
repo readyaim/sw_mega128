@@ -21,6 +21,9 @@ extern void write_dataSeries2eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
 extern void read_eeprom_to_UART1buffer(UINT16 addr);
+extern UINT16 get_address(Date_t *targetTime);
+extern BOOL IsEmpty(struct Fifo *this);
+extern UINT8 FetchFifo(struct Fifo *this);
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -30,8 +33,8 @@ extern void read_eeprom_to_UART1buffer(UINT16 addr);
 *******************************************************************************/
 void processCmd(UINT8 data)
 {
-    UINT8 i, command, para;
-    UINT8 str[80];
+    UINT8 command, para;
+    //UINT8 str[80];
 	UINT16 addr_eeprom;
     /*struct Result result;
     LED_Status = LED_QuickFlash;*/
@@ -103,18 +106,21 @@ void processCmd(UINT8 data)
 				dataSample_min_g.temp.data = 0xFFFF;
 				dataSample_max_g.humidity.data = 0;
 				dataSample_min_g.humidity.data = 0xFFFF;
-				dataSample_max_g.rain.data = 0;
-				dataSample_min_g.rain.data = 0xFFFF;
-				dataSample_max_g.evaporation.data = 0;
-				dataSample_min_g.evaporation.data = 0xFFFF;
-				dataSample_max_g.sunShineTime.data = 0;
-				dataSample_min_g.sunShineTime.data = 0xFFFF;
+				
 				dataSample_max_g.airPressure.data = 0;
 				dataSample_min_g.airPressure.data = 0xFFFF;
 				dataSample_max_g.groundTemp.data = 0;
 				dataSample_min_g.groundTemp.data = 0xFFFF;
 				dataSample_max_g.radiation.data = 0;
 				dataSample_min_g.radiation.data = 0xFFFF;
+				
+				dataSample_max_g.rain.data = 0;
+				dataSample_min_g.rain.data = 0x0;
+				dataSample_max_g.evaporation.data = 0;
+				dataSample_min_g.evaporation.data = 0x0;
+				dataSample_max_g.sunShineTime.data = 0;
+				dataSample_min_g.sunShineTime.data = 0x0;
+				
 				//dataSample_max_g.windSpeed.data = 0;
 				//dataSample_min_g.windSpeed.data = 0xFFFF;
 				//dataSample_max_g.windDirection.data = 0;
@@ -123,12 +129,12 @@ void processCmd(UINT8 data)
 			case 1:
 				//Upload data
 				printf("run 0x51\r\n");
-				addr_eeprom = get_address(uploadTime_g);
+				addr_eeprom = get_address(&uploadTime_g);
 				read_eeprom_to_UART1buffer(addr_eeprom);
 				break;
 			case 2:
 				//write min value
-				write_extremeData2eeprom(&dataInRom_min_g, para);
+				//write_extremeData2eeprom(&dataInRom_min_g, para);
 				break;
 			case 3: //Reset(); break;
 			default://printf("Illegal command!!\r\n"); 

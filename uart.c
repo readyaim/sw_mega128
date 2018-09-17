@@ -53,7 +53,7 @@ UINT8 char2int(UINT8 ch)
 {
 	UINT8 t;
 	t = 'a';
-	return (UINT8)((UINT16)(ch));
+	//return (UINT8)((UINT16)(ch));
 	if ((ch >= '0') && (ch <= '9'))
 		return ch - 48;
 	else if ((ch >= 'A') && (ch <= 'Z'))
@@ -232,7 +232,7 @@ Descriptions:
 ****************************************************************************/
 void main_uart0(void)
 {
-	unsigned int i;
+	//unsigned int i;
 	TXC0_RD = 0;
 	TXC0_WR = 0;
 	RXC0_RD = 0;
@@ -264,7 +264,7 @@ Descriptions:
 ****************************************************************************/
 void init_uart0(void)
 {
-	unsigned int i;
+	//unsigned int i;
 	TXC0_RD = 0;
 	TXC0_WR = 0;
 	RXC0_RD = 0;
@@ -456,8 +456,8 @@ void uart1_cmdParsing(UINT8 ch)
 	static UINT8 char_index = 0;
 	static UINT8 str[UART1_MAX_RX_BUFFER];
 	static UINT32 tickcoutStart;
-	Date_t newTime;
-	UINT16 addr_eeprom;
+	//Date_t newTime;
+	//UINT16 addr_eeprom;
 	UINT8 i = 0;
 
 	switch (state)
@@ -762,7 +762,7 @@ Descriptions:
 ****************************************************************************/
 void main_uart1_loopback(void)
 {
-	unsigned int i;
+	//unsigned int i;
 	uart1_init();
 	SEI();  //ÔÊÐíÖÐ¶Ï
 	uart1_putchar('t');

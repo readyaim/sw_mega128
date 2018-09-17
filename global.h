@@ -139,19 +139,43 @@ typedef struct dataInEEPROM_t {
 }dataInEEPROM_t;
 extern struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 
+
+
+
 typedef struct DataTimeSeries_t {
 	dataInEEPROM_t temp;
 	dataInEEPROM_t humidity;
 	dataInEEPROM_t airPressure;
 	dataInEEPROM_t groundTemp;
 	dataInEEPROM_t radiation;
-	dataInEEPROM_t windSpeed;
-	dataInEEPROM_t windDirection;
 	dataInEEPROM_t rain;
 	dataInEEPROM_t sunShineTime;
 	dataInEEPROM_t evaporation;
+	//dataInEEPROM_t windSpeed;
+	//dataInEEPROM_t windDirection;
+	dataInEEPROM_t windSpeed1m;
+	dataInEEPROM_t windSpeed2m;
+	dataInEEPROM_t windSpeed10m;
+	dataInEEPROM_t windDirection1m;
+	dataInEEPROM_t windDirection2m;
+	dataInEEPROM_t windDirection10m;
+
 }DataTimeSeries_t;
 extern struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
+
+/*
+TODO:
+//change the data type as below:
+UINT16 dataArraySample_g[14]
+#define IDX_TEMP 0
+#define IDX_HUMIDITY 1
+...
+
+
+*/
+
+
+
 
 typedef struct DataSeries_t {
 	UINT16 temp;
@@ -166,8 +190,6 @@ typedef struct DataSeries_t {
 	UINT16 evaporation;
 }DataSeries_t;
 
-
-
 typedef struct TimeStamp_t {
 	Date_t time;
 	UINT32 tickeCounter;
@@ -176,7 +198,6 @@ typedef struct TimeStamp_t {
 	UINT8 flag;		//1, new Time is updated, for get_current_time()
 }TimeStamp_t;
 extern struct TimeStamp_t timeStampShot_g;
-
 /*
 enum TransIntervalMode_t {
 	min5 = 3,

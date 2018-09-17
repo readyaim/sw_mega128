@@ -195,32 +195,75 @@ void write_dataSeries2eeprom(void)
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.radiation);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.radiation);
-	addr_write_eeprom += 8;
+	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.radiation);
+	//addr_write_eeprom += 8;
 
 	/* rain */
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.rain);
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.rain);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
-	addr_write_eeprom += 8;
+	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
+	//addr_write_eeprom += 8;
 
 	/* sunShineTime */
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
-	addr_write_eeprom += 8;
+	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
+	//addr_write_eeprom += 8;
 
 	/* evaporation */
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.evaporation);
 	addr_write_eeprom += 8;
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.evaporation);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.evaporation);
+	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.evaporation);
+	//addr_write_eeprom += 8;
+
+	/* windSpeed1m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed1m);
 	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed1m);
+	addr_write_eeprom += 8;
+
+	/* windSpeed2m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed2m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed2m);
+	addr_write_eeprom += 8;
+
+	/* windSpeed10m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed10m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed10m);
+	addr_write_eeprom += 8;
+
+	/* windSpeed1m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed1m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed1m);
+	addr_write_eeprom += 8;
+
+	/* windDirection1m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection1m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection1m);
+	addr_write_eeprom += 8;
+
+	/* windDirection2m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection2m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection2m);
+	addr_write_eeprom += 8;
+
+	/* windDirection10m */
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection10m);
+	addr_write_eeprom += 8;
+	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection10m);
+	addr_write_eeprom += 8;
+
 
 	//TODO: solve addr_write_eeprom overflow
 	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize)
@@ -237,7 +280,7 @@ void write_dataSeries2eeprom(void)
 void read_dataIneeprom(UINT16 uiAddress, dataInEEPROM_t *data2eeprom)
 {
 	UINT16 tmp;
-	UINT8 high8, low8;
+	UINT8 low8;
 	data2eeprom->time.year1 = EEPROM_read(uiAddress++);
 	data2eeprom->time.year = EEPROM_read(uiAddress++);
 	data2eeprom->time.mon = EEPROM_read(uiAddress++);
@@ -294,7 +337,7 @@ void write_extremeData2eeprom(dataInEEPROM_t *dataInRom_extreme, UINT8 para)
 void read_eepromCtrledByUART1(UINT8 addOffset)
 {
 	UINT8 data;
-	UINT16 addr;
+	//UINT16 addr;
 	if (addOffset >= 0x0F)
 	{
 		//reset addess
@@ -307,7 +350,7 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 	}
 	//addr = (addr_read_eeprom) + addOffset-1;
 	data = EEPROM_read(addr_read_eeprom);
-	printf("data@0x%x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
+	printf("data at 0x%x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
 }
 /*******************************************************************************
 * Function:     read_eeprom_to_UART1buffer()
@@ -353,7 +396,7 @@ void test_EEPROM(void)
 	for (i = 0; i < 10; i++)
 	{
 		EEPROM_READ(i, data);
-		printf("data@%d is  %d \r\n", i, data);
+		printf("data at %d is  %d \r\n", i, data);
 	}
 	
 	for (i = 0; i < 10;)

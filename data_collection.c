@@ -14,6 +14,13 @@
 #define _DATA_COLLECT_DEBUG
 //#define _PRINT_ADC
 //enum TransIntervalMode_t transInterval_g = 5;
+#define index_3s 0
+#define index_1m 1
+#define index_2m 2
+#define index_10m 3
+
+#define index_windDirection 0
+#define index_windSpeed 1
 
 #define _ACCUMULATION_ENABLE
 UINT8 transInterval_g = 3;
@@ -169,7 +176,7 @@ UINT16 get_address(Date_t *targetTime)
 	printf("addr_estimate is %d\r\n", addr_estimate);
 
 	return addr_estimate;
-	NOP();
+
 }
 /*******************************************************************************
 * Function:      get_series_data_sec()
@@ -178,23 +185,73 @@ UINT16 get_address(Date_t *targetTime)
 * Description:   collect windDirection, windSpeed
 					   TODO
 *******************************************************************************/
-void get_series_data_sec(UINT16 *data_wind)
+void get_series_data_sec(UINT16 (*data_wind_series)[2])
 {
-	UINT8 windDirection = 0, windSpeed=1;
+	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
+	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
+	static UINT16 data_wind_3sec_array[3][2];
+	static UINT8 index_sample = 0;
+	static UINT8 flag = 0;		/* to initiate all moving average values */
+
 #ifdef _DATA_COLLECT_DEBUG
 	// for debug only
 	static UINT16 n = 7000;
 	static UINT16 m = 8000;
 
-	data_wind[windDirection] = n;		//winDirection collection
-	data_wind[windSpeed] = m;		// windSpeed collection
+	data_wind_3sec_array[index_sample][index_windDirection] = n;		//winDirection collection
+	data_wind_3sec_array[index_sample][index_windSpeed] = m;		// windSpeed collection
 	n += 50;
 	m += 90;
 #else
-	data_wind[windDirection] = n;		//winDirection collection
-	data_wind[windSpeed] = m;		// windSpeed collection
+	data_wind_3sec_array[index_sample][index_windDirection] = n;		//winDirection collection
+	data_wind_3sec_array[index_sample][index_windSpeed] = m;		// windSpeed collection
 	NOP();
 #endif
+	if (flag == 0)
+	{
+		data_wind_3sec_array[1][index_windDirection]= data_wind_3sec_array[index_sample][index_windDirection];
+		data_wind_3sec_array[2][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
+		data_wind_series[index_3s][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
+		data_wind_series[index_1m][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
+		data_wind_series[index_2m][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
+		data_wind_series[index_10m][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
+
+		data_wind_3sec_array[1][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		data_wind_3sec_array[2][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		data_wind_series[index_3s][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		data_wind_series[index_1m][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		data_wind_series[index_2m][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		data_wind_series[index_10m][index_windSpeed] = data_wind_3sec_array[index_sample][index_windSpeed];
+		flag = 1;
+	}
+
+	data_wind_series[index_3s][index_windDirection] = (data_wind_3sec_array[0][index_windDirection] +
+																				data_wind_3sec_array[1][index_windDirection]+
+																				data_wind_3sec_array[2][index_windDirection]) / 3;
+	data_wind_series[index_3s][index_windSpeed] = (data_wind_3sec_array[0][index_windSpeed] +
+																					data_wind_3sec_array[1][index_windSpeed] +
+																					data_wind_3sec_array[2][index_windSpeed]) / 3;
+	if (index_sample == 2)
+	{
+		index_sample = 0;
+	}
+	else
+	{
+		index_sample += 1;
+	}
+	//index_sample = (index_sample + 1) & 3;	//0,1,2,3
+
+	/* 60s moving average method*/
+	data_wind_series[index_1m][index_windDirection] = data_wind_series[index_1m][index_windDirection] +
+		(data_wind_series[index_3s][index_windDirection] - data_wind_series[index_1m][index_windDirection]) / 60;
+	data_wind_series[index_1m][index_windSpeed] = data_wind_series[index_1m][index_windSpeed] +
+		(data_wind_series[index_3s][index_windSpeed] - data_wind_series[index_1m][index_windSpeed]) / 60;
+
+	/* 120s moving average method*/
+	data_wind_series[index_2m][index_windDirection] = data_wind_series[index_2m][index_windDirection] +
+		(data_wind_series[index_3s][index_windDirection] - data_wind_series[index_2m][index_windDirection]) / 120;
+	data_wind_series[index_2m][index_windSpeed] = data_wind_series[index_2m][index_windSpeed] +
+		(data_wind_series[index_3s][index_windSpeed] - data_wind_series[index_2m][index_windSpeed]) / 120;
 }
 /*******************************************************************************
 * Function:      get_series_data_10sec()
@@ -209,7 +266,7 @@ void get_series_data_10sec(DataSeries_t *dataseries)
 	// for debug only
 	static UINT16 n = 0xA;
 	static UINT16 m = 1301;
-	
+
 
 	dataseries->temp = n++;		//ADC0, temperature
 	dataseries->humidity = m++;		//ADC1, humidity
@@ -260,27 +317,117 @@ void get_series_data_1min(void)
 	dataSample_g.rain.data = n;
 	dataSample_g.evaporation.data = m;
 	dataSample_g.sunShineTime.data = o;
+	n += 8;
+	m += 2;
+	o += 20;
 
-	
+
 
 #ifdef _PRINT_ADC
 	printf("rain is %d mv\r\n", n);
 	printf("evaporation is %d mv\r\n", m);
 	printf("sunShineTime is %d mv\r\n", o);
 #endif
-	n += 3;
-	m += 2;
-	o += 20;
-	//return n++;
 #else
 	//for ADC0 sampling
 	UINT16 data;
-	dataseries->temp = get_data_adc(0x00);		//ADC0, temperature
-	dataseries->humidity = get_data_adc(0x01);		//ADC1, humidity
-	//TODO: others data sampling
+	dataSample_g.rain.data = get_value_TODO();
+	dataSample_g.evaporation.data = get_value_TODO();
+	dataSample_g.sunShineTime.data = get_value_TODO();
 
 #endif // _DATA_COLLECT_DEBUG
 }
+
+/*******************************************************************************
+* Function:      process_series_data_wind_1m()
+* Arguments:
+* Return:		  data;
+* Description:   process windDirection, windSpeed;
+*******************************************************************************/
+void process_series_data_wind_1m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+{
+	/* TODO: change these index to #define*/
+	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
+	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
+	/* TODO: change these index to #define, end*/
+	
+	/* windDirection */
+	dataSample_g.windDirection1m.data = data_wind_series[index_1m][index_windDirection];
+	dataSample_g.windDirection1m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windDirection1m.data > dataSample_max_g.windDirection1m.data)
+	{
+		dataSample_max_g.windDirection1m = dataSample_g.windDirection1m;
+	}
+
+	/* windSpeed */
+	dataSample_g.windSpeed1m.data = data_wind_series[index_1m][index_windSpeed];
+	dataSample_g.windSpeed1m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windSpeed1m.data > dataSample_max_g.windSpeed1m.data)
+	{
+		dataSample_max_g.windSpeed1m = dataSample_g.windSpeed1m;
+	}
+}
+
+/*******************************************************************************
+* Function:      process_series_data_wind_2m()
+* Arguments:
+* Return:		  data;
+* Description:   process windDirection, windSpeed;
+*******************************************************************************/
+void process_series_data_wind_2m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+{
+	/* TODO: change these index to #define*/
+	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
+	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
+	/* TODO: change these index to #define, end*/
+
+	/* windDirection */
+	dataSample_g.windDirection2m.data = data_wind_series[index_2m][index_windDirection];
+	dataSample_g.windDirection2m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windDirection2m.data > dataSample_max_g.windDirection2m.data)
+	{
+		dataSample_max_g.windDirection2m = dataSample_g.windDirection2m;
+	}
+
+	/* windSpeed */
+	dataSample_g.windSpeed2m.data = data_wind_series[index_2m][index_windSpeed];
+	dataSample_g.windSpeed2m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windSpeed2m.data > dataSample_max_g.windSpeed2m.data)
+	{
+		dataSample_max_g.windSpeed2m = dataSample_g.windSpeed2m;
+	}
+}
+
+/*******************************************************************************
+* Function:      process_series_data_wind_10m()
+* Arguments:
+* Return:		  data;
+* Description:   process windDirection, windSpeed;
+*******************************************************************************/
+void process_series_data_wind_10m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+{
+	/* TODO: change these index to #define*/
+	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
+	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
+	/* TODO: change these index to #define, end*/
+
+	/* windDirection */
+	dataSample_g.windDirection10m.data = data_wind_series[index_10m][index_windDirection];
+	dataSample_g.windDirection10m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windDirection10m.data > dataSample_max_g.windDirection10m.data)
+	{
+		dataSample_max_g.windDirection10m = dataSample_g.windDirection10m;
+	}
+
+	/* windSpeed */
+	dataSample_g.windSpeed10m.data = data_wind_series[index_10m][index_windSpeed];
+	dataSample_g.windSpeed10m.time = get_current_time(currentTickCount);
+	if (dataSample_g.windSpeed10m.data > dataSample_max_g.windSpeed10m.data)
+	{
+		dataSample_max_g.windSpeed10m = dataSample_g.windSpeed10m;
+	}
+}
+
 /*******************************************************************************
 * Function:      process_series_data_1min()
 * Arguments:
@@ -290,9 +437,9 @@ void get_series_data_1min(void)
 *******************************************************************************/
 void process_series_data_1min(UINT32 currentTickCount)
 {
-	UINT8 i, max_index, min_index;
-	UINT16 maxdata = 0, mindata = 0xFFFF;
-	UINT32 datasum = 0, tickCountDiff;
+	//UINT8 max_index, min_index;
+	//UINT16 maxdata = 0, mindata = 0xFFFF;
+	//UINT32 datasum = 0, tickCountDiff;
 	/* evaporation */
 	dataSample_g.evaporation.time = get_current_time(currentTickCount);
 	// save max and min, with time
@@ -300,12 +447,16 @@ void process_series_data_1min(UINT32 currentTickCount)
 	{
 		dataSample_max_g.evaporation = dataSample_g.evaporation;
 	}
+#ifdef _ACCUMULATION_ENABLE
+	dataSample_min_g.evaporation.data += dataSample_g.evaporation.data;
+	dataSample_g.evaporation.data = dataSample_min_g.evaporation.data;
+#else
 	//TODO: should be else if
 	if (dataSample_g.evaporation.data < dataSample_min_g.evaporation.data)
 	{
 		dataSample_min_g.evaporation = dataSample_g.evaporation;
 	}
-
+#endif
 	/* sunShineTime */
 	dataSample_g.sunShineTime.time = get_current_time(currentTickCount);
 	// save max and min, with time
@@ -313,11 +464,18 @@ void process_series_data_1min(UINT32 currentTickCount)
 	{
 		dataSample_max_g.sunShineTime = dataSample_g.sunShineTime;
 	}
+#ifdef _ACCUMULATION_ENABLE
+	dataSample_min_g.sunShineTime.data += dataSample_g.sunShineTime.data;
+	// can be move run every transInterval*300
+	dataSample_g.sunShineTime.data = dataSample_min_g.sunShineTime.data;
+#else
 	//TODO: should be else if
 	if (dataSample_g.sunShineTime.data < dataSample_min_g.sunShineTime.data)
 	{
 		dataSample_min_g.sunShineTime = dataSample_g.sunShineTime;
 	}
+#endif
+
 
 	/* rain */
 	dataSample_g.rain.time = get_current_time(currentTickCount);
@@ -336,7 +494,7 @@ void process_series_data_1min(UINT32 currentTickCount)
 	//dataSample_min_g.rain.data needs to be clear to 0 when the data is saved(every 5min)
 	//init dataSample_min_g.rain.data to zero
 #else
-	
+
 	if (dataSample_g.rain.data < dataSample_min_g.rain.data)
 	{
 		dataSample_min_g.rain = dataSample_g.rain;
@@ -355,7 +513,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 {
 	UINT8 i, max_index, min_index;
 	UINT16 maxdata = 0, mindata = 0xFFFF;
-	UINT32 datasum = 0, tickCountDiff;
+	UINT32 datasum = 0;
 	/* temperature */
 	//1. remove max value
 	//2. remove min value
@@ -588,18 +746,23 @@ void ticker_timer1_handler(void)
 	static UINT8 data_index = 0;
 	static UINT16 data[6];
 	static struct DataSeries_t dataseries[6];
-	UINT8 i;
+	//UINT8 i;
 	UINT16 maxdata = 0, mindata = 0, max_index = 0, min_index = 0;
 	UINT32 currentTickCount = 0, tickCountDiff = 0;
 	UINT32 datasum = 0;
 	static UINT32 lastTickCount = 0xFFFFFFFF;
-	
+
 	UINT8 n_3s = 3, n_2m = 120, n_10m = 600;
 	static UINT8 flag = 0;
-	UINT8 windDirection=0, windSpeed=1;
-	UINT16 data_wind[2];
+	UINT8 windDirection = 0, windSpeed = 1;
+	//UINT16 data_wind[2];		//saved sampling result.
 	static UINT8 wind_index = 0;
-	static  UINT16 data_wind_array[2][3], data_3s[2], data_2m[2], data_10m[2];
+	static  UINT16 data_wind_array[2][3], data_3s[2], data_1m[2], data_2m[2], data_10m[2];
+	static UINT16 data_wind_series[4][2];	//4: 3s, 1m, 2m, 10m; 2: speed, direction
+	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
+	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
+
+	//data_wind_array saves 3sec data
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
 	if (currentTickCount % 5 == 0)
 	{
@@ -607,38 +770,81 @@ void ticker_timer1_handler(void)
 		{
 			lastTickCount = currentTickCount;
 			//TODO: wind direction and wind speed
-			{
-				get_series_data_sec(data_wind);
-				if (flag == 0)
-				{
-					// init data
-					data_3s[windDirection] = data_wind[windDirection];
-					data_wind_array[windDirection][1] = data_wind[windDirection];
-					data_wind_array[windDirection][2] = data_wind[windDirection];
-					data_3s[windSpeed] = data_wind[windSpeed];
-					data_wind_array[windSpeed][1] = data_wind[windSpeed];
-					data_wind_array[windSpeed][2] = data_wind[windSpeed];
-					data_2m[windDirection] = data_wind[windDirection];
-					data_2m[windSpeed] = data_wind[windSpeed];
-					data_10m[windDirection] = data_wind[windDirection];
-					data_10m[windSpeed] = data_wind[windSpeed];
-					flag = 1;
-				}
-			
-				data_wind_array[windDirection][wind_index] = data_wind[windDirection];
-				data_wind_array[windSpeed][wind_index] = data_wind[windSpeed];
-				data_3s[windDirection] = (data_wind_array[windDirection][0] + 
-								data_wind_array[windDirection][1] + 
-								data_wind_array[windDirection][2]) / 3;
-				data_3s[windSpeed] = (data_wind_array[windSpeed][0] +
-					data_wind_array[windSpeed][1] +
-					data_wind_array[windSpeed][2]) / 3;
-				wind_index = (wind_index + 1) & 3;
 
-				data_2m[windDirection] = data_2m[windDirection]+(data_wind[windDirection]  -  data_2m[windDirection]) / 120;
-				data_2m[windSpeed] = data_2m[windSpeed] + (data_wind[windSpeed]  - data_2m[windSpeed]) / 120;
-				data_10m[windDirection] = data_10m[windDirection] + (data_wind[windDirection]  - data_10m[windDirection]) / 600;
-				data_10m[windSpeed] = data_10m[windSpeed]+(data_wind[windSpeed] - data_10m[windSpeed]) / 600;
+			//get_series_data_sec(data_wind);
+			get_series_data_sec(data_wind_series);
+#if 0
+			if (flag == 0)
+			{
+				// init data
+				data_3s[windDirection] = data_wind[windDirection];
+				data_wind_array[windDirection][1] = data_wind[windDirection];
+				data_wind_array[windDirection][2] = data_wind[windDirection];
+				data_1m[windDirection] = data_wind[windDirection];
+				data_2m[windDirection] = data_wind[windDirection];
+				data_10m[windDirection] = data_wind[windDirection];
+
+
+				data_3s[windSpeed] = data_wind[windSpeed];
+				data_wind_array[windSpeed][1] = data_wind[windSpeed];
+				data_wind_array[windSpeed][2] = data_wind[windSpeed];
+				data_1m[windSpeed] = data_wind[windSpeed];
+				data_2m[windSpeed] = data_wind[windSpeed];
+				data_10m[windSpeed] = data_wind[windSpeed];
+				flag = 1;
+			}
+			/* 3 seconds, moving average method*/
+			data_wind_array[windDirection][wind_index] = data_wind[windDirection];
+			data_wind_array[windSpeed][wind_index] = data_wind[windSpeed];
+			data_3s[windDirection] = (data_wind_array[windDirection][0] +
+				data_wind_array[windDirection][1] +
+				data_wind_array[windDirection][2]) / 3;
+			data_3s[windSpeed] = (data_wind_array[windSpeed][0] +
+				data_wind_array[windSpeed][1] +
+				data_wind_array[windSpeed][2]) / 3;
+			//wind_index = (wind_index + 1) & 3;
+
+			/* 60s moving average method*/
+			data_1m[windDirection] = data_1m[windDirection] + (data_wind[windDirection] - data_1m[windDirection]) / 60;
+			data_1m[windSpeed] = data_1m[windSpeed] + (data_wind[windSpeed] - data_1m[windSpeed]) / 60;
+
+			/* 120s moving average method*/
+			data_2m[windDirection] = data_2m[windDirection] + (data_wind[windDirection] - data_2m[windDirection]) / 120;
+			data_2m[windSpeed] = data_2m[windSpeed] + (data_wind[windSpeed] - data_2m[windSpeed]) / 120;
+			//data_10m[windDirection] = data_10m[windDirection] + (data_wind[windDirection] - data_10m[windDirection]) / 600;
+			//data_10m[windSpeed] = data_10m[windSpeed] + (data_wind[windSpeed] - data_10m[windSpeed]) / 600;
+#endif
+			if (currentTickCount % 300 == 0)
+			{
+				/* TODO: combine with 1min data processing*/
+				// 1min, wind
+				data_wind_series[index_10m][index_windDirection] = data_wind_series[index_10m][index_windDirection] +
+					(data_wind_series[index_1m][index_windDirection] - data_wind_series[index_10m][index_windDirection]) / 10;
+				data_wind_series[index_10m][index_windSpeed] = data_wind_series[index_10m][index_windSpeed] +
+					(data_wind_series[index_1m][index_windSpeed] - data_wind_series[index_10m][index_windSpeed]) / 10;
+				
+				process_series_data_wind_1m(currentTickCount, data_wind_series);
+				
+				/*
+				data_10m[windDirection] = data_1m[windDirection];
+				data_10m[windSpeed] = data_1m[windSpeed];
+				data_10m[windDirection] = data_10m[windDirection] + (data_wind[windDirection] - data_10m[windDirection]) / (600 / 60);
+				data_10m[windSpeed] = data_10m[windSpeed] + (data_wind[windSpeed] - data_10m[windSpeed]) / (600 / 60);
+				*/
+			}
+
+			if (currentTickCount % 600 == 0)
+			{
+				// 2min, wind
+				process_series_data_wind_2m(currentTickCount, data_wind_series);
+
+			}
+
+			if (currentTickCount % 3000 == 0)
+			{
+				// 10min, wind
+				process_series_data_wind_10m(currentTickCount, data_wind_series);
+
 			}
 
 
@@ -703,10 +909,16 @@ void ticker_timer1_handler(void)
 				get_series_data_1min();
 				process_series_data_1min(currentTickCount);
 			}
+			/* TODO: Shift 1 tick, possible to miss 1 tick. need to modify to be robust */
+			// if ((currentTickCount+1) % (transInterval_g * 300) == 0)
 			if (currentTickCount % (transInterval_g * 300) == 0)
 			{
-				// TODO: Possible to miss 1 tick. need to modify to be robust
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	//add to fifo, write eeprom commands, extreme value(with date)
+				/* process wind data(speed and direction), start */
+				
+				/* process wind data(speed and direction), end */
+				
+				/* add to fifo, write eeprom commands, extreme value(with date)*/
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	
 				//printf("fifo cmd 0x50: write eeprom commands\r\n");
 #ifdef _ACCUMULATION_ENABLE
 				dataSample_min_g.rain.data = 0;		//clear accumulated value every 5min, not minmum value
