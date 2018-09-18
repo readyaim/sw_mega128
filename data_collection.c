@@ -9,9 +9,9 @@
 ****************************************************************************/
 
 #include "global.h"
+#include <stdlib.h>
 
-
-#define _DATA_COLLECT_DEBUG
+//#define _DATA_COLLECT_DEBUG
 //#define _PRINT_ADC
 //enum TransIntervalMode_t transInterval_g = 5;
 #define index_3s 0
@@ -185,7 +185,7 @@ UINT16 get_address(Date_t *targetTime)
 * Description:   collect windDirection, windSpeed
 					   TODO
 *******************************************************************************/
-void get_series_data_sec(UINT16 (*data_wind_series)[2])
+void get_series_data_sec(INT16(*data_wind_series)[2])
 {
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
 	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
@@ -193,23 +193,35 @@ void get_series_data_sec(UINT16 (*data_wind_series)[2])
 	static UINT8 index_sample = 0;
 	static UINT8 flag = 0;		/* to initiate all moving average values */
 
-#ifdef _DATA_COLLECT_DEBUG
+#if 1
 	// for debug only
-	static UINT16 n = 7000;
-	static UINT16 m = 8000;
-
-	data_wind_3sec_array[index_sample][index_windDirection] = n;		//winDirection collection
-	data_wind_3sec_array[index_sample][index_windSpeed] = m;		// windSpeed collection
-	n += 50;
-	m += 90;
+	UINT16 x;
+	UINT16 nbase = 1000;
+	UINT16 mbase = 1500;
+	INT16 d=20;
+	x = rand();
+	data_wind_3sec_array[index_sample][index_windDirection] = nbase+(x>>9);		//winDirection collection
+	data_wind_3sec_array[index_sample][index_windSpeed] = mbase +(x >> 9);		// windSpeed collection
+	nbase += d;
+	mbase += d;
+	if (nbase > 1500)
+	{
+		d = -20;
+	}
+	else if (nbase < 1000)
+	{
+		d = 20;
+	}
+	
 #else
 	data_wind_3sec_array[index_sample][index_windDirection] = n;		//winDirection collection
 	data_wind_3sec_array[index_sample][index_windSpeed] = m;		// windSpeed collection
 	NOP();
 #endif
-	if (flag == 0)
+	if (flag == 1)
 	{
-		data_wind_3sec_array[1][index_windDirection]= data_wind_3sec_array[index_sample][index_windDirection];
+		// init for moving average method for fast value., now disable
+		data_wind_3sec_array[1][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
 		data_wind_3sec_array[2][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
 		data_wind_series[index_3s][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
 		data_wind_series[index_1m][index_windDirection] = data_wind_3sec_array[index_sample][index_windDirection];
@@ -226,11 +238,11 @@ void get_series_data_sec(UINT16 (*data_wind_series)[2])
 	}
 
 	data_wind_series[index_3s][index_windDirection] = (data_wind_3sec_array[0][index_windDirection] +
-																				data_wind_3sec_array[1][index_windDirection]+
-																				data_wind_3sec_array[2][index_windDirection]) / 3;
+		data_wind_3sec_array[1][index_windDirection] +
+		data_wind_3sec_array[2][index_windDirection]) / 3;
 	data_wind_series[index_3s][index_windSpeed] = (data_wind_3sec_array[0][index_windSpeed] +
-																					data_wind_3sec_array[1][index_windSpeed] +
-																					data_wind_3sec_array[2][index_windSpeed]) / 3;
+		data_wind_3sec_array[1][index_windSpeed] +
+		data_wind_3sec_array[2][index_windSpeed]) / 3;
 	if (index_sample == 2)
 	{
 		index_sample = 0;
@@ -344,13 +356,13 @@ void get_series_data_1min(void)
 * Return:		  data;
 * Description:   process windDirection, windSpeed;
 *******************************************************************************/
-void process_series_data_wind_1m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+void process_series_data_wind_1m(UINT32 currentTickCount, INT16(*data_wind_series)[2])
 {
 	/* TODO: change these index to #define*/
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
 	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
 	/* TODO: change these index to #define, end*/
-	
+
 	/* windDirection */
 	dataSample_g.windDirection1m.data = data_wind_series[index_1m][index_windDirection];
 	dataSample_g.windDirection1m.time = get_current_time(currentTickCount);
@@ -374,7 +386,7 @@ void process_series_data_wind_1m(UINT32 currentTickCount, UINT16 (*data_wind_ser
 * Return:		  data;
 * Description:   process windDirection, windSpeed;
 *******************************************************************************/
-void process_series_data_wind_2m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+void process_series_data_wind_2m(UINT32 currentTickCount, INT16(*data_wind_series)[2])
 {
 	/* TODO: change these index to #define*/
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
@@ -404,7 +416,7 @@ void process_series_data_wind_2m(UINT32 currentTickCount, UINT16 (*data_wind_ser
 * Return:		  data;
 * Description:   process windDirection, windSpeed;
 *******************************************************************************/
-void process_series_data_wind_10m(UINT32 currentTickCount, UINT16 (*data_wind_series)[2])
+void process_series_data_wind_10m(UINT32 currentTickCount, INT16(*data_wind_series)[2])
 {
 	/* TODO: change these index to #define*/
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
@@ -757,63 +769,23 @@ void ticker_timer1_handler(void)
 	UINT8 windDirection = 0, windSpeed = 1;
 	//UINT16 data_wind[2];		//saved sampling result.
 	static UINT8 wind_index = 0;
-	static  UINT16 data_wind_array[2][3], data_3s[2], data_1m[2], data_2m[2], data_10m[2];
-	static UINT16 data_wind_series[4][2];	//4: 3s, 1m, 2m, 10m; 2: speed, direction
+	//static  UINT16 data_wind_array[2][3], data_3s[2], data_1m[2], data_2m[2], data_10m[2];
+	static INT16 data_wind_series[4][2];	//4: 3s, 1m, 2m, 10m; 2: speed, direction
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
 	//const UINT8 index_3s = 0, index_1m = 1, index_2m = 2, index_10m = 3;
 
 	//data_wind_array saves 3sec data
 	currentTickCount = SystemTickCount;	//buffer SystemTickCount, to avoid updating
-	if (currentTickCount % 5 == 0)
+	if (lastTickCount != currentTickCount)
 	{
-		if (lastTickCount != currentTickCount)
+		lastTickCount = currentTickCount;
+		if (currentTickCount % 5 == 0)
 		{
-			lastTickCount = currentTickCount;
+
 			//TODO: wind direction and wind speed
 
 			//get_series_data_sec(data_wind);
 			get_series_data_sec(data_wind_series);
-#if 0
-			if (flag == 0)
-			{
-				// init data
-				data_3s[windDirection] = data_wind[windDirection];
-				data_wind_array[windDirection][1] = data_wind[windDirection];
-				data_wind_array[windDirection][2] = data_wind[windDirection];
-				data_1m[windDirection] = data_wind[windDirection];
-				data_2m[windDirection] = data_wind[windDirection];
-				data_10m[windDirection] = data_wind[windDirection];
-
-
-				data_3s[windSpeed] = data_wind[windSpeed];
-				data_wind_array[windSpeed][1] = data_wind[windSpeed];
-				data_wind_array[windSpeed][2] = data_wind[windSpeed];
-				data_1m[windSpeed] = data_wind[windSpeed];
-				data_2m[windSpeed] = data_wind[windSpeed];
-				data_10m[windSpeed] = data_wind[windSpeed];
-				flag = 1;
-			}
-			/* 3 seconds, moving average method*/
-			data_wind_array[windDirection][wind_index] = data_wind[windDirection];
-			data_wind_array[windSpeed][wind_index] = data_wind[windSpeed];
-			data_3s[windDirection] = (data_wind_array[windDirection][0] +
-				data_wind_array[windDirection][1] +
-				data_wind_array[windDirection][2]) / 3;
-			data_3s[windSpeed] = (data_wind_array[windSpeed][0] +
-				data_wind_array[windSpeed][1] +
-				data_wind_array[windSpeed][2]) / 3;
-			//wind_index = (wind_index + 1) & 3;
-
-			/* 60s moving average method*/
-			data_1m[windDirection] = data_1m[windDirection] + (data_wind[windDirection] - data_1m[windDirection]) / 60;
-			data_1m[windSpeed] = data_1m[windSpeed] + (data_wind[windSpeed] - data_1m[windSpeed]) / 60;
-
-			/* 120s moving average method*/
-			data_2m[windDirection] = data_2m[windDirection] + (data_wind[windDirection] - data_2m[windDirection]) / 120;
-			data_2m[windSpeed] = data_2m[windSpeed] + (data_wind[windSpeed] - data_2m[windSpeed]) / 120;
-			//data_10m[windDirection] = data_10m[windDirection] + (data_wind[windDirection] - data_10m[windDirection]) / 600;
-			//data_10m[windSpeed] = data_10m[windSpeed] + (data_wind[windSpeed] - data_10m[windSpeed]) / 600;
-#endif
 			if (currentTickCount % 300 == 0)
 			{
 				/* TODO: combine with 1min data processing*/
@@ -822,9 +794,9 @@ void ticker_timer1_handler(void)
 					(data_wind_series[index_1m][index_windDirection] - data_wind_series[index_10m][index_windDirection]) / 10;
 				data_wind_series[index_10m][index_windSpeed] = data_wind_series[index_10m][index_windSpeed] +
 					(data_wind_series[index_1m][index_windSpeed] - data_wind_series[index_10m][index_windSpeed]) / 10;
-				
+
 				process_series_data_wind_1m(currentTickCount, data_wind_series);
-				
+
 				/*
 				data_10m[windDirection] = data_1m[windDirection];
 				data_10m[windSpeed] = data_1m[windSpeed];
@@ -846,84 +818,83 @@ void ticker_timer1_handler(void)
 				process_series_data_wind_10m(currentTickCount, data_wind_series);
 
 			}
+		}
 
-
-			if (currentTickCount % tick_divider == 0)
+		if (currentTickCount % tick_divider == 0)
+		{
+			//
+			switch (data_index)
 			{
-				//
-				switch (data_index)
-				{
-					//temp, humidity, airPressure, groundTemp, radiation
-				case 5:
-					/*get 3rd data*/
-					get_series_data_10sec(&dataseries[data_index]);
-					data_index = 0;
-					process_series_data_10sec(dataseries, currentTickCount);
-					/*
-					//Caculate howmany tick does it need
-					tickCountDiff = SystemTickCount - currentTickCount;
-					printf("TickCountDiff for case5 is %x\r\n", tickCountDiff);
-					*/
-					break;
-				case 4:
-					/*get 2nd data*/
-					get_series_data_10sec(&dataseries[data_index]);
-					//data[data_index] = get_data(0x0);
-					data_index++;
-					break;
-				case 3:
-					/*get 2nd data*/
-					get_series_data_10sec(&dataseries[data_index]);
-					//data[data_index] = get_data(0x0);
-					data_index++;
-					break;
-				case 2:
-					/*get 2nd data*/
-					//data[data_index] = get_data(0x0);
-					get_series_data_10sec(&dataseries[data_index]);
-					data_index++;
-					break;
-				case 1:
-					/*get 2nd data*/
-					get_series_data_10sec(&dataseries[data_index]);
-					//data[data_index] = get_data(0x0);
-					data_index++;
-					break;
-				case 0:
-					/*get 1st data*/
-					//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
-					printf(".....1st data......\r\n");
-					get_series_data_10sec(&dataseries[data_index]);
-					data_index++;
-					break;
-				default:
-					NOP();
-					//printf("Illegal MeterAndSensorMode!!\r\n"); break;
-				}
+				//temp, humidity, airPressure, groundTemp, radiation
+			case 5:
+				/*get 3rd data*/
+				get_series_data_10sec(&dataseries[data_index]);
+				data_index = 0;
+				process_series_data_10sec(dataseries, currentTickCount);
+				/*
+				//Caculate howmany tick does it need
+				tickCountDiff = SystemTickCount - currentTickCount;
+				printf("TickCountDiff for case5 is %x\r\n", tickCountDiff);
+				*/
+				break;
+			case 4:
+				/*get 2nd data*/
+				get_series_data_10sec(&dataseries[data_index]);
+				//data[data_index] = get_data(0x0);
+				data_index++;
+				break;
+			case 3:
+				/*get 2nd data*/
+				get_series_data_10sec(&dataseries[data_index]);
+				//data[data_index] = get_data(0x0);
+				data_index++;
+				break;
+			case 2:
+				/*get 2nd data*/
+				//data[data_index] = get_data(0x0);
+				get_series_data_10sec(&dataseries[data_index]);
+				data_index++;
+				break;
+			case 1:
+				/*get 2nd data*/
+				get_series_data_10sec(&dataseries[data_index]);
+				//data[data_index] = get_data(0x0);
+				data_index++;
+				break;
+			case 0:
+				/*get 1st data*/
+				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
+				printf(".....1st data......\r\n");
+				get_series_data_10sec(&dataseries[data_index]);
+				data_index++;
+				break;
+			default:
+				NOP();
+				//printf("Illegal MeterAndSensorMode!!\r\n"); break;
 			}
-			//get_data();
-			//ch_show
-			if (currentTickCount % 300 == 0)
-			{// 1min
-				//evaporation, sunShineTime, rain
-				get_series_data_1min();
-				process_series_data_1min(currentTickCount);
-			}
-			/* TODO: Shift 1 tick, possible to miss 1 tick. need to modify to be robust */
-			// if ((currentTickCount+1) % (transInterval_g * 300) == 0)
-			if (currentTickCount % (transInterval_g * 300) == 0)
-			{
-				/* process wind data(speed and direction), start */
-				
-				/* process wind data(speed and direction), end */
-				
-				/* add to fifo, write eeprom commands, extreme value(with date)*/
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x50);	
-				//printf("fifo cmd 0x50: write eeprom commands\r\n");
+		}
+		//get_data();
+		//ch_show
+		if (currentTickCount % 300 == 0)
+		{// 1min
+			//evaporation, sunShineTime, rain
+			get_series_data_1min();
+			process_series_data_1min(currentTickCount);
+		}
+		/* TODO: Shift 1 tick, possible to miss 1 tick. need to modify to be robust */
+		// if ((currentTickCount+1) % (transInterval_g * 300) == 0)
+		if (currentTickCount % (transInterval_g * 300) == 0)
+		{
+			//Save the data
+			/* add to fifo, write eeprom commands, extreme value(with date)*/
+			(*CommandFifo.AddFifo)(&CommandFifo, 0x50);
+			//printf("fifo cmd 0x50: write eeprom commands\r\n");
 #ifdef _ACCUMULATION_ENABLE
-				dataSample_min_g.rain.data = 0;		//clear accumulated value every 5min, not minmum value
+			dataSample_min_g.rain.data = 0;		//clear accumulated value every 5min, not minmum value
+			dataSample_min_g.evaporation.data = 0;		//clear accumulated value every 5min, not minmum value
+			dataSample_min_g.sunShineTime.data = 0;		//clear accumulated value every 5min, not minmum value
 #endif
-			}
+
 		}
 	}
 }

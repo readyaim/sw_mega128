@@ -40,8 +40,8 @@ static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //定义接受缓冲区
 UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
 static UINT8 RXC1_RD;   //接受缓冲区读指针
 static UINT8 RXC1_WR;   //接受缓冲区写指针
-UINT8 TXC1_RD;   //发送缓冲区读指针
-UINT8 TXC1_WR;   //发送缓冲区写指针
+UINT16 TXC1_RD;   //发送缓冲区读指针
+UINT16 TXC1_WR;   //发送缓冲区写指针
 
 /****************************************************************************
 Function:       char2int()
@@ -535,7 +535,8 @@ void uart1_cmdParsing(UINT8 ch)
 			{
 				//TODO:
 				uart1_TimeParsing(str, &uploadTime_g);
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);	//add to fifo, read eeprom commands
+				//AddFifo(&CommandFifo, 0x51);
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);		//add to fifo, read eeprom commands
 				state = 0;
 				printf("upload data is requested\r\n");
 			}

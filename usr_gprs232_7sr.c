@@ -22,7 +22,23 @@ void run(void)
 {
     NOP();
 }
-
+/*******************************************************************************
+* Function:     strlowerCase()
+* Arguments:  string
+* Return:
+* Description: transfer A-Z to a-z if *s is in capital.
+*******************************************************************************/
+void strlowerCase(UINT8 *s)
+{
+	while (*s)
+	{
+		if ((*s >= 'A') && (*s <= 'Z'))
+		{
+			*s += 32;
+		}
+		s++;
+	}
+}
 /*******************************************************************************
 * Function:     enterCommandMode()
 * Arguments:  
@@ -156,23 +172,7 @@ void gprs_7SR_init(void)
     uart1_init_devices();
 }
 
-/*******************************************************************************
-* Function:     strlowerCase()
-* Arguments:  string  
-* Return:
-* Description: transfer A-Z to a-z if *s is in capital.
-*******************************************************************************/
-void strlowerCase(UINT8 *s)
-{
-    while (*s)
-    {
-        if ((*s >= 'A') && (*s <= 'Z'))
-        {
-            *s += 32;
-        }
-        s++;
-    }
-}
+
 
 
 

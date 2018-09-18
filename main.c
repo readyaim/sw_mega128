@@ -20,6 +20,7 @@ extern UINT8 FetchFifo(struct Fifo *this);
 extern void ClearFifo(struct Fifo *this);
 extern void ticker_processCmd(void);
 extern void init_beep(void);
+extern void init_port_adc0(void);
 //extern void timer0_init(void);
 //extern void timer0_ovf_isr(void);
 //extern void port_init_timer0(void);
@@ -118,7 +119,7 @@ void init_vars(void)
 	timeStampShot_g.time = initTime;
 	timeStampShot_g.tickeCounter = 1;
 	timeStampShot_g.currentAddrEEPROM = 0x0000;
-	timeStampShot_g.pageSize = 8*3*5+8*2*9;		//bytes, 3*8(date6, data2)
+	timeStampShot_g.pageSize = 264;		//bytes, 3*8(date6, data2)
 	timeStampShot_g.flag = 1;
 
     CommandFifo.IsEmpty = IsEmpty;

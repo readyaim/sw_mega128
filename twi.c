@@ -1012,7 +1012,7 @@ void IIC_TWI_ReadFromDeviceByAddr(UINT8 DeviceAddr, UINT8 DataAddr, UINT8 *pData
 void main_twi(void)
 {
     UINT8 pWData[4] = { 1,2,3,4 };
-    UINT8 pRData[2];
+    //UINT8 pRData[2];
     UINT8 deviceAddr = 0x13;
     UINT8 length = 4;
     IIC_TWI_Init();
