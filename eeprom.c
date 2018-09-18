@@ -240,12 +240,7 @@ void write_dataSeries2eeprom(void)
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed10m);
 	addr_write_eeprom += 8;
 
-	/* windSpeed1m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed1m);
-	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed1m);
-	addr_write_eeprom += 8;
-
+	
 	/* windDirection1m */
 	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection1m);
 	addr_write_eeprom += 8;
