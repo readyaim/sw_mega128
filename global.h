@@ -60,8 +60,18 @@
 
 /* uart.h start*/
 #define RXC1_BUFF_SIZE 128   //接受缓冲区字节数
-#define TXC1_BUFF_SIZE 320   //发送缓冲区字节数
-extern UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
+#define UART1_TX_BUFFER_SIZE 320   /*发送缓冲区字节数*/
+/*
+#define UART1_TX_BUFFER_MASK ( UART1_TX_BUFFER_SIZE - 1 )
+#if ( UART1_TX_BUFFER_SIZE & UART1_TX_BUFFER_MASK )
+#error RX buffer size is not a power of 2
+#endif
+*/
+
+
+
+
+
 extern UINT16 TXC1_RD;   //发送缓冲区读指针
 extern UINT16 TXC1_WR;   //发送缓冲区写指针
 /* uart.h end*/

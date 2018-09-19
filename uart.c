@@ -37,11 +37,15 @@ static UINT8 TXC0_WR;   //发送缓冲区写指针
 
 // add static to forbiden other file to use
 static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //定义接受缓冲区
-UINT8 TXC1_BUFF[TXC1_BUFF_SIZE];   //定义发送缓冲区
+UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
 static UINT8 RXC1_RD;   //接受缓冲区读指针
 static UINT8 RXC1_WR;   //接受缓冲区写指针
 UINT16 TXC1_RD;   //发送缓冲区读指针
 UINT16 TXC1_WR;   //发送缓冲区写指针
+
+volatile UINT16 UART1_TxHead;
+volatile UINT16 UART1_TxTail;
+
 
 /****************************************************************************
 Function:       char2int()
@@ -361,8 +365,8 @@ Returns: :
 ****************************************************************************/
 int uart1_putchar(char ch)
 {
-	TXC1_BUFF[TXC1_WR] = ch;
-	if (TXC1_WR < (TXC1_BUFF_SIZE - 1))   //TXC1_BUFF_SIZE  发送区数据大小
+	UART1_TxBuf[TXC1_WR] = ch;
+	if (TXC1_WR < (UART1_TX_BUFFER_SIZE - 1))   //UART1_TX_BUFFER_SIZE  发送区数据大小
 		TXC1_WR++;
 	else
 		TXC1_WR = 0;
@@ -598,10 +602,11 @@ We shall increase the Tx buffer addr by 1. If the buffer is empty, we shall disa
 the UDR interrupt.
 ****************************************************************************/
 #pragma interrupt_handler uart1_udre_isr:iv_USART1_UDRE   
+#if 1
 void uart1_udre_isr(void)
 {
-	UDR1 = TXC1_BUFF[TXC1_RD];
-	if (TXC1_RD < (TXC1_BUFF_SIZE - 1))
+	UDR1 = UART1_TxBuf[TXC1_RD];
+	if (TXC1_RD < (UART1_TX_BUFFER_SIZE - 1))
 		TXC1_RD++;
 	else
 		TXC1_RD = 0;
@@ -611,6 +616,25 @@ void uart1_udre_isr(void)
 		Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
 	}
 }
+#else
+void uart1_udre_isr(void)
+{
+	UINT8 tmptail;
+	/* check if all data is transmitted */
+	if (UART1_TxHead != UART1_TxTail)
+	{
+		/* calculate buffer index */
+		tmptail = (UART1_TxTail + 1) & UART1_TX_BUFFER_MASK;
+		UART1_TxTail = tmptail; /* store new index */
+		UDR1 = UART1_TxBuf[tmptail]; /* start transmition */
+	}
+	else
+	{
+		//UCR &= ~(1 << UDRIE); /* disable UDRE interrupt */
+		Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
+	}
+}
+#endif
 /****************************************************************************
 Function Name: uart1_loopback
 Arguments:
@@ -708,6 +732,7 @@ Returns:
 Descriptions: Interrupt Service Routines for TC0 RX complete. there is data in Rx buffer to be read.
 ****************************************************************************/
 #pragma interrupt_handler uart1_rx_isr:iv_USART1_RXC   
+#if 1
 void uart1_rx_isr(void)
 {
 	// TODO: check UPE/DOR/FE for errorflag before read UDR1: if error dummy=UDR1; else RXC1_BUFF[RXC1_WR]=UDR1
@@ -728,7 +753,22 @@ void uart1_rx_isr(void)
 		RXC1_WR = 0;
 #endif
 }
-
+#else
+void uart1_rx_isr(void)
+{
+	UINT8 data;
+	UINT8 tmphead;
+	data = UDR1; /* read the received data */
+	/* calculate buffer index */
+	tmphead = (UART_RxHead + 1) & UART_RX_BUFFER_MASK;
+	UART_RxHead = tmphead; /* store new index */
+	if (tmphead == UART_RxTail)
+	{
+		/* ERROR! Receive buffer overflow */
+	}
+	UART_RxBuf[tmphead] = data; /* store received data in buffer */
+}
+#endif
 /****************************************************************************
 Function Name: uart1_init_buffer
 Arguments:
@@ -741,6 +781,9 @@ void uart1_init_buffer(void)
 	TXC1_WR = 0;
 	RXC1_RD = 0;
 	RXC1_WR = 0;
+	UART1_TxHead = 0;
+	UART1_TxTail = 0;
+	//printf("init TXC1_WR= %d, TXC1_RD=%d\n", TXC1_WR, TXC1_RD);
 }
 
 /****************************************************************************
@@ -751,6 +794,7 @@ Descriptions:
 ****************************************************************************/
 void uart1_init(void)
 {
+	
 	uart1_init_buffer();
 	uart1_init_devices();
 	uart1_init_register();

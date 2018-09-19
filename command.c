@@ -273,8 +273,8 @@ void ticker_processCmd(void)
 	CLI();
 	init_SEG4();    //enable SEG4, can be run in main()
 	//test_timer2();  //enable timer2 ovf interrupt, can be run in main()
-	uart1_init();
-	init_port_adc0();
+	//uart1_init();
+	//init_port_adc0();
 	init_devices_timer1();
 	SEI();
 	while (1)

@@ -11,7 +11,9 @@
 #include "global.h"
 #include <eeprom.h>
 
-
+extern volatile UINT16 UART1_TxHead;
+extern volatile UINT16 UART1_TxTail;
+extern UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
 
 /*******************************************************************************
 * Function:      EEPROM_read()
@@ -358,23 +360,26 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 {
 	//disable UART1 Rx Interrupt
 	UINT8 data, i;
+	UINT8 tmphead;
 	//TODO
 	//1. make sure buffer is empty
 	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
 		data = EEPROM_read(addr++);
-		//TODO: transfer dec to str
-		TXC1_BUFF[TXC1_WR] = data;
-		if (TXC1_WR < buffSize)   //TXC1_BUFF_SIZE  发送区数据大小
-			TXC1_WR++;
-		else
-			TXC1_WR = 0;
-	}
-	
-	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
-	Set_Bit(UCSR1B, UDRIE1);          //开启UDRE中断
 
-//enable UART1 Rx Interrupt
+		//TODO: transfer dec to str
+		/* calculate buffer index */
+		tmphead = (UART1_TxHead + 1) & UART1_TX_BUFFER_MASK;
+		/* wait for free space in buffer */
+		while (tmphead == UART1_TxTail)
+			;
+		UART1_TxBuf[tmphead] = data;	/* store data in buffer */
+		UART1_TxHead = tmphead;	/* store new index */
+		Set_Bit(UCSR1B, UDRIE1);          //enable UART1 Tx interrupt
+	}
+	printf("enable UART1 Rx INT, %d, %d\n", UART1_TxHead, UART1_TxTail);
+	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
+	//Set_Bit(UCSR1B, UDRIE1);          //enable UART1 Tx interrupt
 }
 #else
 /*******************************************************************************
@@ -387,27 +392,30 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 {
 	//disable UART1 Rx Interrupt
 	UINT16 data, i;
+	UINT16 tmpWR = 0;
 	//TODO
 	//1. make sure buffer is empty
-	TXC1_WR = 0;
-	TXC1_RD = 0;
+	//printf("before Tx, TXC1_WR= %d, TXC1_RD=%d\r\n", TXC1_WR, TXC1_RD);
 	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
 		data = EEPROM_read(addr++);
 		//TODO: transfer dec to str
-		TXC1_BUFF[TXC1_WR] = data;
-		if (TXC1_WR < (TXC1_BUFF_SIZE-1))   //TXC1_BUFF_SIZE  发送区数据大小
-			TXC1_WR++;
+		UART1_TxBuf[TXC1_WR] = data;
+		if (TXC1_WR < (UART1_TX_BUFFER_SIZE - 1))   //UART1_TX_BUFFER_SIZE  发送区数据大小
+			TXC1_WR++;		// = 1;
 		else
 			TXC1_WR = 0;
 	}
-	//printf("enable UART1 Rx INT, %d, %d\n", TXC1_WR, TXC1_RD);
+	//printf("After UART1 Tx, TXC1_WR= %d, TXC1_RD=%d\r\n", TXC1_WR, TXC1_RD);
 	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
 	Set_Bit(UCSR1B, UDRIE1);          //开启UDRE中断
 
-									  //enable UART1 Rx Interrupt
 }
 #endif
+
+
+
+
 /*******************************************************************************
 * Function:     test_EEPROM()
 * Arguments:  
