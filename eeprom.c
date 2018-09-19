@@ -146,7 +146,7 @@ void write_data2eeprom(void)
 	addr_write_eeprom += 8;
 
 	//TODO: solve addr_write_eeprom overflow
-	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE)
+	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE+1)
 	{
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
@@ -263,7 +263,7 @@ void write_dataSeries2eeprom(void)
 
 
 	//TODO: solve addr_write_eeprom overflow
-	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize)
+	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize +1)
 	{
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}

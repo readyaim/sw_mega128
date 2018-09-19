@@ -99,7 +99,7 @@ extern UINT8 transInterval_g;
 /* eeprom.h start*/
 #define EEPROM_DATA_SIZE 16
 #define START_ADDR_EEPROM (0x0000)
-#define END_ADDR_EEPROM 0X3FFF
+#define END_ADDR_EEPROM 0xFFF
 #define MAX_DATA_ADDR_EEPPROM 0
 #define MIN_DATA_ADDR_EEPPROM EEPROM_DATA_SIZE
 
