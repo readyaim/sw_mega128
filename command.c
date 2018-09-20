@@ -17,10 +17,11 @@ extern void uart1_init(void);
 extern void uart1_checkCMDPolling(void);
 extern void ticker_timer1_handler(void);
 extern void init_devices_timer1(void);
-extern void write_dataSeries2eeprom(void);
+extern void write_dataSeries_to_eeprom(void);
 extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
 extern void read_eeprom_to_UART1buffer(UINT16 addr);
+extern void write_tickCountTime_to_eeprom(void);
 extern UINT16 get_address(Date_t *targetTime);
 extern BOOL IsEmpty(struct Fifo *this);
 extern UINT8 FetchFifo(struct Fifo *this);
@@ -98,7 +99,7 @@ void processCmd(UINT8 data)
 			case 0:
 				// write data to eeprom
 				printf("write eeprom\r\n");
-				write_dataSeries2eeprom();
+				write_dataSeries_to_eeprom();
 				printf("write ends\r\n");
 				//after writing max and min to eeprom, clear max/min value
 				//TODO: use eman max_i, min_i, and array, void *p
@@ -133,8 +134,8 @@ void processCmd(UINT8 data)
 				read_eeprom_to_UART1buffer(addr_eeprom);
 				break;
 			case 2:
-				//write min value
-				//write_extremeData2eeprom(&dataInRom_min_g, para);
+				printf("run 0x52\r\n");
+				write_tickCountTime_to_eeprom();
 				break;
 			case 3: //Reset(); break;
 			default://printf("Illegal command!!\r\n"); 

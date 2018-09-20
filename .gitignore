@@ -6,6 +6,7 @@
 !*.c
 !*.h
 !*.bat
+!MEGA128.mak
 !git_readme.txt
 #exclude folders
 /example/

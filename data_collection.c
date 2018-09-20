@@ -1,3 +1,6 @@
+//http://time.beijing-time.org/time.asp
+//t0=new Date().getTime(); nyear=2018; nmonth=9; nday=20; nwday=4; nhrs=17; nmin=38; nsec=47;
+//https://blog.csdn.net/B__T__T/article/details/80559469
 /****************************************************************************
 * File name: data_collection.c
 * Description: data collection
@@ -25,6 +28,7 @@
 #define _ACCUMULATION_ENABLE
 UINT8 transInterval_g = 3;
 extern UINT16 get_data_adc(UINT8 channel);
+extern UINT16 addr_write_eeprom;
 
 /*******************************************************************************
 * Function:      get_data()
@@ -173,7 +177,7 @@ UINT16 get_address(Date_t *targetTime)
 	addr_estimate -= interval * timeStampShot_g.pageSize;
 
 	printf("interval is %d\r\n", interval);
-	printf("addr_estimate is %d\r\n", addr_estimate);
+	printf("addr_estimate is %d\r\n", addr_estimate+ START_ADDR_EEPROM);
 
 	return addr_estimate;
 
@@ -882,8 +886,8 @@ void ticker_timer1_handler(void)
 			process_series_data_1min(currentTickCount);
 		}
 		/* TODO: Shift 1 tick, possible to miss 1 tick. need to modify to be robust */
-		// if ((currentTickCount+1) % (transInterval_g * 300) == 0)
-		if (currentTickCount % (transInterval_g * 300) == 0)
+		if ((currentTickCount+1) % (transInterval_g * 300) == 0)
+		//if (currentTickCount % (transInterval_g * 300) == 0)
 		{
 			//Save the data
 			/* add to fifo, write eeprom commands, extreme value(with date)*/
@@ -895,6 +899,20 @@ void ticker_timer1_handler(void)
 			dataSample_min_g.sunShineTime.data = 0;		//clear accumulated value every 5min, not minmum value
 #endif
 
+		}
+
+		if ((currentTickCount) % (transInterval_g * 300) == 0)
+			//if (currentTickCount % (transInterval_g * 300) == 0)
+		{
+			//Save the data
+			//Update timeStampShot_g
+			timeStampShot_g.flag = 1;
+			timeStampShot_g.tickeCounter = currentTickCount;
+			timeStampShot_g.time = get_current_time(currentTickCount);
+			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;
+			//Save to eeprom
+			(*CommandFifo.AddFifo)(&CommandFifo, 0x52);
+			//printf("fifo cmd 0x50: write eeprom commands\r\n");
 		}
 	}
 }

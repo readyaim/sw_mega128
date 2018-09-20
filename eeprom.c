@@ -14,6 +14,10 @@
 extern volatile UINT16 UART1_TxHead;
 extern volatile UINT16 UART1_TxTail;
 extern UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
+extern Date_t get_current_time(UINT32 currentTickCout);
+
+UINT16 addr_write_eeprom = START_ADDR_EEPROM;
+UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
 /*******************************************************************************
 * Function:      EEPROM_read()
@@ -55,8 +59,7 @@ void EEPROM_write(UINT16 uiAddress, UINT8 ucData)
     EECR |= (1 << EEWE);
 }
 
-UINT16 addr_write_eeprom = START_ADDR_EEPROM;
-UINT16 addr_read_eeprom = START_ADDR_EEPROM;
+
 
 /*******************************************************************************
 * Function:     write_Time2eeprom()
@@ -93,13 +96,13 @@ void read_TimeIneeprom(Date_t *time, UINT16 addr)
 }
 
 /*******************************************************************************
-* Function:     write_adc0_to_eeprom()
+* Function:     write_dataStruct_to_eeprom()
 * Arguments:  Date_t *time
 UINT16 addr
 * Return:
 * Description: write time to eeprom
 *******************************************************************************/
-void write_adc0_to_eeprom(UINT16 addr, dataInEEPROM_t *data2eeprom)
+void write_dataStruct_to_eeprom(UINT16 addr, dataInEEPROM_t *data2eeprom)
 {
 	EEPROM_write(addr++, data2eeprom->time.year1);
 	EEPROM_write(addr++, data2eeprom->time.year);
@@ -111,11 +114,13 @@ void write_adc0_to_eeprom(UINT16 addr, dataInEEPROM_t *data2eeprom)
 	EEPROM_write(addr++, (UINT8)(data2eeprom->data >> 8));
 }
 
+#if 0
 /*******************************************************************************
 * Function:     write_data2eeprom()
 * Arguments:  *data2eeprom
 * Return:
 * Description:  write data to eeprom, MSB in low address
+NOT USED
 *******************************************************************************/
 void write_data2eeprom(void)
 {
@@ -138,11 +143,11 @@ void write_data2eeprom(void)
 	write_Time2eeprom(addr_write_eeprom, &dataInRom_max_g.time);
 	*/
 
-	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_g);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataInRom_g);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_max_g);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataInRom_max_g);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataInRom_min_g);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataInRom_min_g);
 	addr_write_eeprom += 8;
 
 	//TODO: solve addr_write_eeprom overflow
@@ -151,114 +156,115 @@ void write_data2eeprom(void)
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
 }
+#endif
 /*******************************************************************************
-* Function:     write_dataSeries2eeprom()
+* Function:     write_dataSeries_to_eeprom()
 * Arguments:  *data2eeprom
 * Return:
 * Description:  write data to eeprom, MSB in low address
 *******************************************************************************/
-void write_dataSeries2eeprom(void)
+void write_dataSeries_to_eeprom(void)
 {
 	/* temperature */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.temp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.temp);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.temp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.temp);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.temp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.temp);
 	addr_write_eeprom += 8;
 
 	/* humidity */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.humidity);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.humidity);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.humidity);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.humidity);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.humidity);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.humidity);
 	addr_write_eeprom += 8;
 
 
 	/* airPressure */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.airPressure);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.airPressure);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.airPressure);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.airPressure);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.airPressure);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.airPressure);
 	addr_write_eeprom += 8;
 
 	/* groundTemp */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.groundTemp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.groundTemp);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.groundTemp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.groundTemp);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.groundTemp);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.groundTemp);
 	addr_write_eeprom += 8;
 
 	/* radiation */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.radiation);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.radiation);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.radiation);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.radiation);
 	addr_write_eeprom += 8;
-	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.radiation);
+	//write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.radiation);
 	//addr_write_eeprom += 8;
 
 	/* rain */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.rain);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.rain);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.rain);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.rain);
 	addr_write_eeprom += 8;
-	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
+	//write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.rain);
 	//addr_write_eeprom += 8;
 
 	/* sunShineTime */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.sunShineTime);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.sunShineTime);
 	addr_write_eeprom += 8;
-	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
+	//write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.sunShineTime);
 	//addr_write_eeprom += 8;
 
 	/* evaporation */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.evaporation);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.evaporation);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.evaporation);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.evaporation);
 	addr_write_eeprom += 8;
-	//write_adc0_to_eeprom(addr_write_eeprom, &dataSample_min_g.evaporation);
+	//write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_min_g.evaporation);
 	//addr_write_eeprom += 8;
 
 	/* windSpeed1m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed1m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed1m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed1m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed1m);
 	addr_write_eeprom += 8;
 
 	/* windSpeed2m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed2m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed2m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed2m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed2m);
 	addr_write_eeprom += 8;
 
 	/* windSpeed10m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed10m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windSpeed10m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed10m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windSpeed10m);
 	addr_write_eeprom += 8;
 
 	
 	/* windDirection1m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection1m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection1m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection1m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection1m);
 	addr_write_eeprom += 8;
 
 	/* windDirection2m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection2m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection2m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection2m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection2m);
 	addr_write_eeprom += 8;
 
 	/* windDirection10m */
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection10m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_g.windDirection10m);
 	addr_write_eeprom += 8;
-	write_adc0_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection10m);
+	write_dataStruct_to_eeprom(addr_write_eeprom, &dataSample_max_g.windDirection10m);
 	addr_write_eeprom += 8;
 
 
@@ -268,6 +274,7 @@ void write_dataSeries2eeprom(void)
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
 }
+#if 0
 /*******************************************************************************
 * Function:     read_dataIneeprom()
 * Arguments:  uiAddress: address, *data2eeprom: the point of data to be saved
@@ -290,6 +297,8 @@ void read_dataIneeprom(UINT16 uiAddress, dataInEEPROM_t *data2eeprom)
 	printf("data read from eepprom is %x", data2eeprom->data);
 	
 }
+#endif
+#if 0
 /*******************************************************************************
 * Function:     write_extremeData2eeprom()
 * Arguments:  dataInEEPROM_t *dataInRom_max_g, 
@@ -322,7 +331,7 @@ void write_extremeData2eeprom(dataInEEPROM_t *dataInRom_extreme, UINT8 para)
 	EEPROM_write(addr++, (UINT8)(dataInRom_extreme->data >> 8));
 	
 }
-
+#endif
 
 
 /*******************************************************************************
@@ -392,7 +401,7 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 {
 	//disable UART1 Rx Interrupt
 	UINT16 data, i;
-	UINT16 tmpWR = 0;
+	//UINT16 tmpWR = 0;
 	//TODO
 	//1. make sure buffer is empty
 	//printf("before Tx, TXC1_WR= %d, TXC1_RD=%d\r\n", TXC1_WR, TXC1_RD);
@@ -413,7 +422,29 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 }
 #endif
 
-
+/*******************************************************************************
+* Function:     write_tickCountTime_to_eeprom()
+* Arguments:  Date_t *time
+					 UINT16 addr
+* Return:
+* Description: write time to eeprom
+*******************************************************************************/
+void write_tickCountTime_to_eeprom(void)
+{
+	UINT16 addr = 0;
+	Date_t time;
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter));
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>8));
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>16));
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>24));
+	time = get_current_time(timeStampShot_g.tickeCounter);
+	EEPROM_write(addr++, time.year1);
+	EEPROM_write(addr++, time.year);
+	EEPROM_write(addr++, time.mon);
+	EEPROM_write(addr++, time.day);
+	EEPROM_write(addr++, time.hour);
+	EEPROM_write(addr++, time.min);
+}
 
 
 /*******************************************************************************

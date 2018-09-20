@@ -1,6 +1,6 @@
 #include "global.h"
 #include "peripherals.h"
-#include<string.h>
+#include <string.h>
 
 
 
