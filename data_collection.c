@@ -166,7 +166,7 @@ Date_t get_current_time(UINT32 currentTickCout)
 *******************************************************************************/
 UINT16 get_address(Date_t *targetTime)
 {
-	UINT16 addr_estimate;
+	INT16 addr_estimate;
 	INT32 interval;
 	//TODO: make sure targetTime is older than timeStampShot
 
@@ -175,6 +175,12 @@ UINT16 get_address(Date_t *targetTime)
 		(timeStampShot_g.time.min - targetTime->min) / transInterval_g;
 	addr_estimate = timeStampShot_g.currentAddrEEPROM;
 	addr_estimate -= interval * timeStampShot_g.pageSize;
+	//TODO: exception for reqested Time is too too long ago, no data existed in eeprom
+	if (addr_estimate < START_ADDR_EEPROM)
+	{
+		addr_estimate = END_ADDR_EEPROM - timeStampShot_g.pageSize+ addr_estimate;
+	}
+
 
 	printf("interval is %d\r\n", interval);
 	printf("addr_estimate is %d\r\n", addr_estimate);
