@@ -21,6 +21,7 @@ extern void ClearFifo(struct Fifo *this);
 extern void ticker_processCmd(void);
 extern void init_beep(void);
 extern void init_port_adc0(void);
+extern void resume_last_timeStampSlot(void);
 //extern void timer0_init(void);
 //extern void timer0_ovf_isr(void);
 //extern void port_init_timer0(void);
@@ -119,7 +120,7 @@ void init_vars(void)
 	timeStampShot_g.time = initTime;
 	timeStampShot_g.tickeCounter = 1;
 	timeStampShot_g.currentAddrEEPROM = START_ADDR_EEPROM;
-	timeStampShot_g.pageSize = 256;		//bytes, 3*8(date6, data2)
+	timeStampShot_g.pageSize = 264;		//bytes, 3*8(date6, data2)
 	timeStampShot_g.flag = 1;		//update flag to 1 everytime time and tickout is changed
 
     CommandFifo.IsEmpty = IsEmpty;
@@ -136,12 +137,15 @@ void main(void)
 {
     CLI();  //disable all interrupt until initialization is done
     init_vars();
+	
     init_beep();
     init_led();
     init_uart0();   //enable printf
 	init_port_adc0();
-	printf("Start program! \r\n");
 	uart1_init();
+	printf("Start program! \r\n");
+	resume_last_timeStampSlot();
+	
     //main_uart0();
     //main_uart1_loopback();
     //main_twi();

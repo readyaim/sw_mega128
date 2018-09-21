@@ -16,8 +16,8 @@ extern volatile UINT16 UART1_TxTail;
 extern UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
 extern Date_t get_current_time(UINT32 currentTickCout);
 
-UINT16 addr_write_eeprom = START_ADDR_EEPROM;
-UINT16 addr_read_eeprom = START_ADDR_EEPROM;
+volatile UINT16 addr_write_eeprom = START_ADDR_EEPROM;
+volatile UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
 /*******************************************************************************
 * Function:      EEPROM_read()
@@ -96,6 +96,38 @@ void read_TimeIneeprom(Date_t *time, UINT16 addr)
 }
 
 /*******************************************************************************
+* Function:     resume_last_timeStampSlot()
+* Arguments:  true, if timeStampSlot is resumed; false, if no data is resumed.
+* Return:
+* Description: read time from eeprom, save the result to *time
+*******************************************************************************/
+BOOL resume_last_timeStampSlot(void)
+{
+	UINT16 addr = TIMESTAMP_ADDR_EEPROM;
+	UINT16 eeprom_addr;
+	UINT8 year1;
+	year1 = EEPROM_read(addr++);
+	if (year1 == 0xFF)
+	{
+		return false;
+	}
+	else
+	{
+		timeStampShot_g.time.year1 = EEPROM_read(addr++);
+		timeStampShot_g.time.year = EEPROM_read(addr++);
+		timeStampShot_g.time.mon = EEPROM_read(addr++);
+		timeStampShot_g.time.day = EEPROM_read(addr++);
+		timeStampShot_g.time.hour = EEPROM_read(addr++);
+		timeStampShot_g.time.min = EEPROM_read(addr++);
+		eeprom_addr = EEPROM_read(addr++);
+		eeprom_addr |= (EEPROM_read(addr++)<<8);
+		timeStampShot_g.currentAddrEEPROM = eeprom_addr;
+		printf("AddrEEPROM is resumed: 0x%x\r\n", eeprom_addr);
+		return true;
+	}
+}
+
+/*******************************************************************************
 * Function:     write_dataStruct_to_eeprom()
 * Arguments:  Date_t *time
 UINT16 addr
@@ -151,7 +183,7 @@ void write_data2eeprom(void)
 	addr_write_eeprom += 8;
 
 	//TODO: solve addr_write_eeprom overflow
-	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_DATA_SIZE+1)
+	if (addr_write_eeprom > END_ADDR_EEPROM - EEPROM_PRESERVED_DATA_SIZE+1)
 	{
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}
@@ -358,7 +390,7 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 	data = EEPROM_read(addr_read_eeprom);
 	printf("data at 0x%x is %d(0x%x) \r\n", addr_read_eeprom, data, data);
 }
-#if 0
+#if 1
 /*******************************************************************************
 * Function:     read_eeprom_to_UART1buffer()
 * Arguments:  addr, timeStampShot.pagesize
@@ -368,26 +400,40 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 void read_eeprom_to_UART1buffer(UINT16 addr)
 {
 	//disable UART1 Rx Interrupt
-	UINT8 data, i;
-	UINT8 tmphead;
+	UINT8 data;
+	UINT16 i=0, j=0;
+	UINT16 tmphead;
 	//TODO
 	//1. make sure buffer is empty
 	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
+		//data = 0;
 		data = EEPROM_read(addr++);
-
+		//EEPROM_READ(addr++, data);
 		//TODO: transfer dec to str
 		/* calculate buffer index */
 		tmphead = (UART1_TxHead + 1) & UART1_TX_BUFFER_MASK;
+		
+		/*
+		if (UART1_TxHead >= UART1_TX_BUFFER_SIZE - 1)
+		{
+			tmphead = 0;
+		}
+		else
+		{
+			tmphead = UART1_TxHead + 1;
+		}
+		*/
 		/* wait for free space in buffer */
 		while (tmphead == UART1_TxTail)
-			;
+			j++;
+		
 		UART1_TxBuf[tmphead] = data;	/* store data in buffer */
 		UART1_TxHead = tmphead;	/* store new index */
 		Set_Bit(UCSR1B, UDRIE1);          //enable UART1 Tx interrupt
 	}
-	printf("enable UART1 Rx INT, %d, %d\n", UART1_TxHead, UART1_TxTail);
-	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
+	printf("enable UART1 Rx INT, %d, %d\r\n", UART1_TxHead, UART1_TxTail);
+	printf("j=%d\r\n", j++);
 	//Set_Bit(UCSR1B, UDRIE1);          //enable UART1 Tx interrupt
 }
 #else
@@ -404,6 +450,8 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 	//UINT16 tmpWR = 0;
 	//TODO
 	//1. make sure buffer is empty
+	//TXC1_WR=0;
+	//TXC1_RD = 0;
 	//printf("before Tx, TXC1_WR= %d, TXC1_RD=%d\r\n", TXC1_WR, TXC1_RD);
 	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
@@ -415,6 +463,10 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 		else
 			TXC1_WR = 0;
 	}
+	UART1_TxBuf[TXC1_WR++] = 0x0D;
+	UART1_TxBuf[TXC1_WR++] = 0x0A;
+
+
 	//printf("After UART1 Tx, TXC1_WR= %d, TXC1_RD=%d\r\n", TXC1_WR, TXC1_RD);
 	//UCSR1B |= (1 << UDRIE1);          //开启UDRE中断
 	Set_Bit(UCSR1B, UDRIE1);          //开启UDRE中断
@@ -431,19 +483,29 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 *******************************************************************************/
 void write_tickCountTime_to_eeprom(void)
 {
-	UINT16 addr = 0;
-	Date_t time;
+	UINT16 addr = TIMESTAMP_ADDR_EEPROM;
+
+	
+	//write Time
+	//time = get_current_time(timeStampShot_g.tickeCounter);
+	EEPROM_write(addr++, timeStampShot_g.time.year1);
+	EEPROM_write(addr++, timeStampShot_g.time.year);
+	EEPROM_write(addr++, timeStampShot_g.time.mon);
+	EEPROM_write(addr++, timeStampShot_g.time.day);
+	EEPROM_write(addr++, timeStampShot_g.time.hour);
+	EEPROM_write(addr++, timeStampShot_g.time.min);
+	//write address
+	//EEPROM_write(addr++, (UINT8)addr_write_eeprom);
+	//EEPROM_write(addr++, (UINT8)(addr_write_eeprom>>8));
+	EEPROM_write(addr++, (UINT8)timeStampShot_g.currentAddrEEPROM);
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.currentAddrEEPROM>>8));
+	//backup tickcounter
+	/*
 	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter));
-	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>8));
-	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>16));
-	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter>>24));
-	time = get_current_time(timeStampShot_g.tickeCounter);
-	EEPROM_write(addr++, time.year1);
-	EEPROM_write(addr++, time.year);
-	EEPROM_write(addr++, time.mon);
-	EEPROM_write(addr++, time.day);
-	EEPROM_write(addr++, time.hour);
-	EEPROM_write(addr++, time.min);
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter >> 8));
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter >> 16));
+	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter >> 24));
+	*/
 }
 
 

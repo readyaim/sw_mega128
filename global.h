@@ -60,20 +60,20 @@
 
 /* uart.h start*/
 #define RXC1_BUFF_SIZE 128   //接受缓冲区字节数
-#define UART1_TX_BUFFER_SIZE 320   /*发送缓冲区字节数*/
-/*
+#define UART1_TX_BUFFER_SIZE 256   /*发送缓冲区字节数*/
+
 #define UART1_TX_BUFFER_MASK ( UART1_TX_BUFFER_SIZE - 1 )
 #if ( UART1_TX_BUFFER_SIZE & UART1_TX_BUFFER_MASK )
 #error RX buffer size is not a power of 2
 #endif
-*/
 
 
 
 
 
-extern UINT16 TXC1_RD;   //发送缓冲区读指针
-extern UINT16 TXC1_WR;   //发送缓冲区写指针
+
+extern volatile UINT16 TXC1_RD;   //发送缓冲区读指针
+extern volatile UINT16 TXC1_WR;   //发送缓冲区写指针
 /* uart.h end*/
 extern void beep(void);
 extern void delay_us(UINT16 microsecond);
@@ -97,11 +97,12 @@ extern UINT8 transInterval_g;
 
 
 /* eeprom.h start*/
-#define EEPROM_DATA_SIZE 256
-#define START_ADDR_EEPROM EEPROM_DATA_SIZE
+#define EEPROM_PRESERVED_DATA_SIZE 256
+#define START_ADDR_EEPROM EEPROM_PRESERVED_DATA_SIZE
 #define END_ADDR_EEPROM 0xFFF
-#define MAX_DATA_ADDR_EEPPROM 0
-#define MIN_DATA_ADDR_EEPPROM EEPROM_DATA_SIZE
+#define TIMESTAMP_ADDR_EEPROM 0
+//#define MAX_DATA_ADDR_EEPPROM 0
+//#define MIN_DATA_ADDR_EEPPROM EEPROM_PRESERVED_DATA_SIZE
 
 //#define TEMP_START_ADDR_EEPROM 0x0000
 //#define TEMP_END_ADDR_EEPROM 0x1FFF

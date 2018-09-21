@@ -28,7 +28,7 @@
 #define _ACCUMULATION_ENABLE
 UINT8 transInterval_g = 3;
 extern UINT16 get_data_adc(UINT8 channel);
-extern UINT16 addr_write_eeprom;
+extern volatile UINT16 addr_write_eeprom;
 
 /*******************************************************************************
 * Function:      get_data()
@@ -901,15 +901,14 @@ void ticker_timer1_handler(void)
 
 		}
 
-		if ((currentTickCount) % (transInterval_g * 300) == 0)
-			//if (currentTickCount % (transInterval_g * 300) == 0)
+		if ((currentTickCount+2) % (transInterval_g*300) == 0)
 		{
-			//Save the data
+			//1 tick shift to write eeprom
 			//Update timeStampShot_g
 			timeStampShot_g.flag = 1;
-			timeStampShot_g.tickeCounter = currentTickCount;
-			timeStampShot_g.time = get_current_time(currentTickCount);
-			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;
+			timeStampShot_g.tickeCounter = (currentTickCount-2);
+			timeStampShot_g.time = get_current_time(currentTickCount-2);
+			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;		//TODO, 
 			//Save to eeprom
 			(*CommandFifo.AddFifo)(&CommandFifo, 0x52);
 			//printf("fifo cmd 0x50: write eeprom commands\r\n");

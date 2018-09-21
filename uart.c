@@ -16,8 +16,9 @@
 
 #define UART0_BAUD 38400	 //UART0_BAUD rate 
 #define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
-#define UART1_BAUD 38400	 //UART1_BAUD rate
-#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)
+#define UART1_BAUD 115200	 //UART1_BAUD rate
+#define UART1_UBRR (CPU_CLK/8/UART1_BAUD)			//U2X=1
+//#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
@@ -40,8 +41,8 @@ static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //定义接受缓冲区
 UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
 static UINT8 RXC1_RD;   //接受缓冲区读指针
 static UINT8 RXC1_WR;   //接受缓冲区写指针
-UINT16 TXC1_RD;   //发送缓冲区读指针
-UINT16 TXC1_WR;   //发送缓冲区写指针
+volatile UINT16 TXC1_RD;   //发送缓冲区读指针
+volatile UINT16 TXC1_WR;   //发送缓冲区写指针
 
 volatile UINT16 UART1_TxHead;
 volatile UINT16 UART1_TxTail;
@@ -605,6 +606,35 @@ the UDR interrupt.
 #if 1
 void uart1_udre_isr(void)
 {
+	UINT16 tmptail;
+	/* check if all data is transmitted */
+	if (UART1_TxHead != UART1_TxTail)
+	{
+		/* calculate buffer index */
+		tmptail = (UART1_TxTail + 1) & UART1_TX_BUFFER_MASK;
+		/*
+		if (UART1_TxTail >= UART1_TX_BUFFER_SIZE - 1)
+		{
+			tmptail = 0;
+		}
+		else
+		{
+			tmptail = UART1_TxTail + 1;
+		}
+		*/
+		UART1_TxTail = tmptail;				/* store new index */
+		UDR1 = UART1_TxBuf[tmptail];	/* start transmition */
+	}
+	else
+	{
+		//UCR &= ~(1 << UDRIE);			/* disable UDRE interrupt */
+		Clr_Bit(UCSR1B, UDRIE1);			//DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
+	}
+}
+
+#else
+void uart1_udre_isr(void)
+{
 	UDR1 = UART1_TxBuf[TXC1_RD];
 	if (TXC1_RD < (UART1_TX_BUFFER_SIZE - 1))
 		TXC1_RD++;
@@ -616,24 +646,7 @@ void uart1_udre_isr(void)
 		Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
 	}
 }
-#else
-void uart1_udre_isr(void)
-{
-	UINT8 tmptail;
-	/* check if all data is transmitted */
-	if (UART1_TxHead != UART1_TxTail)
-	{
-		/* calculate buffer index */
-		tmptail = (UART1_TxTail + 1) & UART1_TX_BUFFER_MASK;
-		UART1_TxTail = tmptail; /* store new index */
-		UDR1 = UART1_TxBuf[tmptail]; /* start transmition */
-	}
-	else
-	{
-		//UCR &= ~(1 << UDRIE); /* disable UDRE interrupt */
-		Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
-	}
-}
+
 #endif
 /****************************************************************************
 Function Name: uart1_loopback
@@ -686,8 +699,9 @@ Returns: :
 void uart1_init_register(void)  //初始化COM0
 {
 	UINT16 ubrr = UART1_UBRR;
+	printf("ubrr = %d\r\n", ubrr);
 	UCSR1B = 0x00; //初始化
-	UCSR1A = 0x00; //初始化, *U2X0=0:非倍速模式
+	UCSR1A = 0x00| (1<<U2X1); //初始化, *U2X1=1:倍速模式
 	UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit
 	Clr_Bit(UCSR1C, USBS1);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
