@@ -113,14 +113,14 @@ BOOL resume_last_timeStampSlot(void)
 	}
 	else
 	{
-		timeStampShot_g.time.year1 = EEPROM_read(addr++);
+		timeStampShot_g.time.year1 = year1;
 		timeStampShot_g.time.year = EEPROM_read(addr++);
 		timeStampShot_g.time.mon = EEPROM_read(addr++);
 		timeStampShot_g.time.day = EEPROM_read(addr++);
 		timeStampShot_g.time.hour = EEPROM_read(addr++);
 		timeStampShot_g.time.min = EEPROM_read(addr++);
 		eeprom_addr = EEPROM_read(addr++);
-		eeprom_addr |= (EEPROM_read(addr++)<<8);
+		eeprom_addr |= (EEPROM_read(addr)<<8);
 		timeStampShot_g.currentAddrEEPROM = eeprom_addr;
 		printf("AddrEEPROM is resumed: 0x%x\r\n", eeprom_addr);
 		return true;
@@ -376,11 +376,15 @@ void read_eepromCtrledByUART1(UINT8 addOffset)
 {
 	UINT8 data;
 	//UINT16 addr;
-	if (addOffset >= 0x0F)
+	if (addOffset == 0x0F)
 	{
 		//reset addess
 		addr_read_eeprom = START_ADDR_EEPROM;
 		//printf("get %x, reset addr_read_eeprom to %d", addOffset, addr_read_eeprom);
+	}
+	else if (addOffset == 0x0E)
+	{
+		addr_read_eeprom = TIMESTAMP_ADDR_EEPROM;
 	}
 	else
 	{

@@ -177,7 +177,7 @@ UINT16 get_address(Date_t *targetTime)
 	addr_estimate -= interval * timeStampShot_g.pageSize;
 
 	printf("interval is %d\r\n", interval);
-	printf("addr_estimate is %d\r\n", addr_estimate+ START_ADDR_EEPROM);
+	printf("addr_estimate is %d\r\n", addr_estimate);
 
 	return addr_estimate;
 
@@ -785,6 +785,7 @@ void ticker_timer1_handler(void)
 		lastTickCount = currentTickCount;
 		if (currentTickCount % 5 == 0)
 		{
+			//1sec
 
 			//TODO: wind direction and wind speed
 
@@ -792,6 +793,7 @@ void ticker_timer1_handler(void)
 			get_series_data_sec(data_wind_series);
 			if (currentTickCount % 300 == 0)
 			{
+				printf("...1min...\r\n");
 				/* TODO: combine with 1min data processing*/
 				// 1min, wind
 				data_wind_series[index_10m][index_windDirection] = data_wind_series[index_10m][index_windDirection] +
@@ -826,7 +828,7 @@ void ticker_timer1_handler(void)
 
 		if (currentTickCount % tick_divider == 0)
 		{
-			//
+			//10sec
 			switch (data_index)
 			{
 				//temp, humidity, airPressure, groundTemp, radiation
@@ -868,7 +870,7 @@ void ticker_timer1_handler(void)
 			case 0:
 				/*get 1st data*/
 				//printf("data[0].temp is collected as %d\r\n", dataseries[data_index].temp);
-				printf(".....1st data......\r\n");
+				//printf(".....1st data......\r\n");
 				get_series_data_10sec(&dataseries[data_index]);
 				data_index++;
 				break;
@@ -886,7 +888,7 @@ void ticker_timer1_handler(void)
 			process_series_data_1min(currentTickCount);
 		}
 		/* TODO: Shift 1 tick, possible to miss 1 tick. need to modify to be robust */
-		if ((currentTickCount+1) % (transInterval_g * 300) == 0)
+		if ((currentTickCount) % (transInterval_g * 300) == 0)
 		//if (currentTickCount % (transInterval_g * 300) == 0)
 		{
 			//Save the data
@@ -901,13 +903,13 @@ void ticker_timer1_handler(void)
 
 		}
 
-		if ((currentTickCount+2) % (transInterval_g*300) == 0)
+		if ((currentTickCount) % (transInterval_g*300) == 0)
 		{
 			//1 tick shift to write eeprom
 			//Update timeStampShot_g
 			timeStampShot_g.flag = 1;
-			timeStampShot_g.tickeCounter = (currentTickCount-2);
-			timeStampShot_g.time = get_current_time(currentTickCount-2);
+			timeStampShot_g.tickeCounter = (currentTickCount);
+			timeStampShot_g.time = get_current_time(currentTickCount);
 			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;		//TODO, 
 			//Save to eeprom
 			(*CommandFifo.AddFifo)(&CommandFifo, 0x52);

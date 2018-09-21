@@ -499,6 +499,7 @@ void uart1_cmdParsing(UINT8 ch)
 		break;
 
 	case 1:
+		//update timeStampShot_g, such as: !201809171750
 		//multi-char commands
 		if (ch>60)
 		{
@@ -525,6 +526,7 @@ void uart1_cmdParsing(UINT8 ch)
 		}
 		break;
 	case 2:
+		//upload eeprom data at requested time, such as: "201809201750
 		//multi-char commands
 		if (ch > 60)
 		{
