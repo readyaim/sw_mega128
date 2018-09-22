@@ -789,6 +789,9 @@ void ticker_timer1_handler(void)
 	if (lastTickCount != currentTickCount)
 	{
 		lastTickCount = currentTickCount;
+
+		
+
 		if (currentTickCount % 5 == 0)
 		{
 			//1sec
@@ -909,17 +912,22 @@ void ticker_timer1_handler(void)
 
 		}
 
-		if ((currentTickCount) % (transInterval_g*300) == 0)
+		if ((currentTickCount) % (transInterval_g * 300) == 0)
 		{
+			//Save timeStampShot in eeprom, in case restart.
+			//when restart, mcu shall resume timeStampShot in eeprom.
+#if 1	
 			//1 tick shift to write eeprom
 			//Update timeStampShot_g
-			timeStampShot_g.flag = 1;
+			
+			timeStampShot_g.time = get_current_time(currentTickCount);	//must be run 1rst, before tickcounter and flag changed.
 			timeStampShot_g.tickeCounter = (currentTickCount);
-			timeStampShot_g.time = get_current_time(currentTickCount);
+			timeStampShot_g.flag = 1;
 			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;		//TODO, 
-			//Save to eeprom
+																		//Save to eeprom
 			(*CommandFifo.AddFifo)(&CommandFifo, 0x52);
 			//printf("fifo cmd 0x50: write eeprom commands\r\n");
+#endif
 		}
 	}
 }

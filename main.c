@@ -57,7 +57,6 @@ extern void test_copystr2TimeStamp(void);
 #endif // _DUMMY_CODE
 
 UINT32 SystemTickCount;
-struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 struct Fifo CommandFifo;
 struct TimeStamp_t timeStampShot_g;
@@ -81,12 +80,7 @@ void init_vars(void)
 
 
     SystemTickCount = 1;
-	dataInRom_g.data = 0;
 
-	//init max value
-	dataInRom_max_g.data = 0;
-	//init min value
-	dataInRom_min_g.data = 0xFFFF;
 
 /*
 	tempTimeAddr.time = initTime;

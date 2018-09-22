@@ -135,12 +135,12 @@ typedef struct Fifo {
 
 
 typedef struct Date_t{
-	UINT8 year1;
-	UINT8 year;
-	UINT8 mon;
-	UINT8 day;
-	UINT8 hour;
-	UINT8 min;
+	INT8 year1;
+	INT8 year;
+	INT8 mon;
+	INT8 day;
+	INT8 hour;
+	INT8 min;
 }Date_t;
 extern Date_t uploadTime_g;
 typedef struct dataInEEPROM_t {
@@ -148,7 +148,6 @@ typedef struct dataInEEPROM_t {
 	UINT16 data;
 
 }dataInEEPROM_t;
-extern struct dataInEEPROM_t dataInRom_g, dataInRom_max_g, dataInRom_min_g;
 
 
 
