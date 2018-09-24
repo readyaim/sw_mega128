@@ -154,7 +154,7 @@ void write_dataStruct_to_eeprom(UINT16 addr, dataInEEPROM_t *data2eeprom)
 }
 
 
-#if 1
+#if 0
 /*******************************************************************************
 * Function:     write_dataSeries_to_eeprom()
 * Arguments:  *data2eeprom
@@ -380,8 +380,24 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 	UINT8 data;
 	UINT16 i=0, j=0;
 	UINT16 tmphead;
+	UINT8 heads[8] = { 'D','A','T','A',0x02,0x01, 0x01,0x00 };		//LOW8, HIGH8, LOW8, HIGH8
 	//TODO
 	//1. make sure buffer is empty
+
+	/* head*/
+	for (i = 0; i < 8; i++)
+	{
+		tmphead = (UART1_TxHead + 1) & UART1_TX_BUFFER_MASK;
+		/* wait for free space in buffer */
+		while (tmphead == UART1_TxTail)
+			j++;
+		UART1_TxBuf[tmphead] = heads[i];	/* store data in buffer */
+		UART1_TxHead = tmphead;	/* store new index */
+		Set_Bit(UCSR1B, UDRIE1);          //enable UART1 Tx interrupt
+	}
+
+
+	/* data body */
 	for (i = 0; i < timeStampShot_g.pageSize; i++)
 	{
 		//data = 0;
@@ -509,5 +525,56 @@ void test_EEPROM(void)
         EEPROM_WRITE(i, i);
 		i += 2;
     }
+
+}
+
+/*******************************************************************************
+* Function:     test_EEPROMwriteSpeed()
+* Arguments:
+* Return:
+* Description:  to test the eeprom write speed: same speed.
+*******************************************************************************/
+void test_EEPROMwriteSpeed(void)
+{
+	UINT16 i = 0,j=0;
+	DataTimeSeries_t  dt_array[3];
+	DataTimeSeries_t *pdt = &dt_array[0];
+	UINT8 *p;
+	UINT16 len, addr = 0;
+	UINT32 SysTicker_start = 0;
+	p = (UINT8 *)pdt;
+	len = sizeof(dt_array);
+	for (i = 0; i < len; i++)
+	{
+		*(p++) = (UINT8)i;
+		//p++;
+	}
+	printf("start\r\n");
+	SysTicker_start = SystemTickCount;
+	p = (UINT8 *)pdt;
+	//
+	for (j=0; j<5; j++)
+	{
+	for (i = 0; i < len; i++)
+	{
+		EEPROM_write(addr++, *(p++));
+	}
+	}
+	printf("end\r\n");
+	printf("diff is %ld\r\n", SystemTickCount - SysTicker_start);
+	
+	//
+	printf("start\r\n");
+	SysTicker_start = SystemTickCount;
+	p = (UINT8 *)pdt;
+	for (j = 0; j < 5; j++)
+	{
+		EEPROMWriteBytes(0, p, len);
+	}
+	printf("end\r\n");
+	printf("diff2 is %ld\r\n", SystemTickCount - SysTicker_start);
+
+
+	NOP();
 
 }

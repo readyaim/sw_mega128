@@ -768,7 +768,7 @@ void ticker_timer1_handler(void)
 	static UINT8 data_index = 0;
 	static UINT16 data[6];
 	static struct DataSeries_t dataseries[6];
-	//UINT8 i;
+	static UINT8 i=1;
 	UINT16 maxdata = 0, mindata = 0, max_index = 0, min_index = 0;
 	UINT32 currentTickCount = 0, tickCountDiff = 0;
 	UINT32 datasum = 0;
@@ -802,7 +802,7 @@ void ticker_timer1_handler(void)
 			get_series_data_sec(data_wind_series);
 			if (currentTickCount % 300 == 0)
 			{
-				printf("...1min...\r\n");
+				printf("...%dmin...\r\n",i++);
 				/* TODO: combine with 1min data processing*/
 				// 1min, wind
 				data_wind_series[index_10m][index_windDirection] = data_wind_series[index_10m][index_windDirection] +

@@ -55,8 +55,8 @@ void timer1_init(void)
     //TCCR1B = (1 << CS10 );  //clock select b'001', CPU_CLK/1
     TCNT1H = 0x00;  //
     TCNT1L = 0x00;  //
-    OCR1AH = 0x18; //设置 TC1 的 输出比较寄存器A 高8位值
-    OCR1AL = 0x6A; //设置 TC1 的 输出比较寄存器A 低8位值
+	OCR1AH = 0x18; //设置 TC1 的 输出比较寄存器A 高8位值
+    OCR1AL = 0x0A; //设置 TC1 的 输出比较寄存器A 低8位值
     //OCR1BH = 0x00; //设置 TC1 的 输出比较寄存器B 高8位值
     //OCR1BL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
     //OCR1CH = 0x00; //设置 TC1 的 输出比较寄存器B 高8位值

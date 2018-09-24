@@ -47,13 +47,14 @@ extern void test_EEPROM(void);
 extern  void test_get_address(void);
 
 
+
 #ifdef _DUMMY_CODE
 extern void test_char2int(void);
 extern void test_strcmp(void);
 extern void test_usr(void);
 extern void collectADC0(void);
 extern void test_copystr2TimeStamp(void);
-
+extern void test_EEPROMwriteSpeed(void);
 #endif // _DUMMY_CODE
 
 UINT32 SystemTickCount;
@@ -156,7 +157,7 @@ void main(void)
 	//(*CommandFifo.AddFifo)(&CommandFifo, 'B');	//add to fifo, read eeprom commands
 	//test_copystr2TimeStamp();
 	//test_get_address();
-	
+	//test_EEPROMwriteSpeed();
 	
 	ticker_processCmd();
 	
