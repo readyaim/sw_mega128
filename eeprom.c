@@ -20,7 +20,7 @@ volatile UINT16 addr_write_eeprom = START_ADDR_EEPROM;
 volatile UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
 
-#if 1
+#if 0
 
 #define EEPROM_read EEPROMread
 #define EEPROM_write EEPROMwrite
