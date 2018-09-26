@@ -9,9 +9,8 @@
 ****************************************************************************/
 
 #include <stdio.h>
-//#include <iom64v.h>
-#include <iom128v.h>
-#include <AVRdef.h>
+#include "AVRdef_l.h"
+#include "iom128v_l.h"
 #include <string.h>
 
 #ifndef GLOBAL_H
@@ -61,7 +60,7 @@
 /* uart.h start*/
 #define RXC1_BUFF_SIZE 128   //接受缓冲区字节数
 #define UART1_TX_BUFFER_SIZE 256   /*发送缓冲区字节数*/
-
+#define DATASAMPLE_PAGE_SIZE 256		/* Page size of Data, 256*/
 #define UART1_TX_BUFFER_MASK ( UART1_TX_BUFFER_SIZE - 1 )
 #if ( UART1_TX_BUFFER_SIZE & UART1_TX_BUFFER_MASK )
 #error RX buffer size is not a power of 2

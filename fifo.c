@@ -1,5 +1,4 @@
 #include "global.h"
-#include "fifo.h"
 //start: point to 1st valid data
 //end: point after last valid data
 

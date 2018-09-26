@@ -11,7 +11,6 @@
 /*********************************包含头文件********************************/
 #include "global.h"
 //#include "peripherals.h"
-#include "fifo.h"
 
 
 extern BOOL IsEmpty(struct Fifo *this);
@@ -115,7 +114,7 @@ void init_vars(void)
 	timeStampShot_g.time = initTime;
 	timeStampShot_g.tickeCounter = 1;
 	timeStampShot_g.currentAddrEEPROM = START_ADDR_EEPROM;
-	timeStampShot_g.pageSize = 256;		//bytes, 3*8(date6, data2)
+	timeStampShot_g.pageSize = DATASAMPLE_PAGE_SIZE;		//bytes, 3*8(date6, data2)
 	timeStampShot_g.flag = 1;		//update flag to 1 everytime time and tickout is changed
 
     CommandFifo.IsEmpty = IsEmpty;
@@ -138,6 +137,7 @@ void main(void)
     init_uart0();   //enable printf
 	init_port_adc0();
 	uart1_init();
+	init_modem();
 	printf("Start program! \r\n");
 	resume_last_timeStampSlot();
 	

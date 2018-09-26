@@ -20,7 +20,7 @@ volatile UINT16 addr_write_eeprom = START_ADDR_EEPROM;
 volatile UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
 
-#if 0
+#if 1
 
 #define EEPROM_read EEPROMread
 #define EEPROM_write EEPROMwrite
@@ -383,6 +383,7 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 	UINT8 heads[8] = { 'D','A','T','A',0x02,0x01, 0x01,0x00 };		//LOW8, HIGH8, LOW8, HIGH8
 	//TODO
 	//1. make sure buffer is empty
+
 
 	/* head*/
 	for (i = 0; i < 8; i++)

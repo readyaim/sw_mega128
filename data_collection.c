@@ -159,12 +159,12 @@ Date_t get_current_time(UINT32 currentTickCout)
 }
 
 /*******************************************************************************
-* Function:      get_address()
+* Function:      get_address_from_Time()
 * Arguments:   (timeStampShot_g)
 * Return:		  the start address of data for target date(Date_t)
 * Description:  calc address offset with Time
 *******************************************************************************/
-UINT16 get_address(Date_t *targetTime)
+UINT16 get_address_from_Time(Date_t *targetTime)
 {
 	INT16 addr_estimate;
 	INT32 interval;
@@ -173,9 +173,21 @@ UINT16 get_address(Date_t *targetTime)
 	interval = (timeStampShot_g.time.day - targetTime->day) * 24 * 60 / transInterval_g +
 		(timeStampShot_g.time.hour - targetTime->hour) * 60 / transInterval_g +
 		(timeStampShot_g.time.min - targetTime->min) / transInterval_g;
+	//TODO: exception for reqested Time is too too long ago, no data existed in eeprom
+	/*
+	if (interval > (END_ADDR_EEPROM- START_ADDR_EEPROM)/ DATASAMPLE_PAGE_SIZE)
+	{
+		interval = 500;
+	}
+	else if (interval < -1000)
+	{
+		interval = -500;
+	}
+	*/
+	
 	addr_estimate = timeStampShot_g.currentAddrEEPROM;
 	addr_estimate -= interval * timeStampShot_g.pageSize;
-	//TODO: exception for reqested Time is too too long ago, no data existed in eeprom
+	
 	if (addr_estimate < START_ADDR_EEPROM)
 	{
 		addr_estimate = END_ADDR_EEPROM - timeStampShot_g.pageSize+ addr_estimate;
@@ -942,7 +954,7 @@ void test_get_address(void)
 {
 	Date_t targetTime = { 20,18,9,12,17,5 };
 	UINT16 addr;
-	addr = get_address(&targetTime);
+	addr = get_address_from_Time(&targetTime);
 	NOP();
 }
 
