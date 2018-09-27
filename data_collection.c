@@ -13,6 +13,7 @@
 
 #include "global.h"
 #include <stdlib.h>
+#include <math.h>
 
 //#define _DATA_COLLECT_DEBUG
 //#define _PRINT_ADC
@@ -26,7 +27,7 @@
 #define index_windSpeed 1
 
 #define _ACCUMULATION_ENABLE
-UINT8 transInterval_g = 3;
+UINT8 transInterval_g = 5;
 extern UINT16 get_data_adc(UINT8 channel);
 extern volatile UINT16 addr_write_eeprom;
 
@@ -166,27 +167,57 @@ Date_t get_current_time(UINT32 currentTickCout)
 *******************************************************************************/
 UINT16 get_address_from_Time(Date_t *targetTime)
 {
-	INT16 addr_estimate;
+	INT32 addr_estimate;
 	INT32 interval;
+#if 0
+	UINT32 currentTickcount;
+	Date_t currentTime;
 	//TODO: make sure targetTime is older than timeStampShot
-
-	interval = (timeStampShot_g.time.day - targetTime->day) * 24 * 60 / transInterval_g +
-		(timeStampShot_g.time.hour - targetTime->hour) * 60 / transInterval_g +
-		(timeStampShot_g.time.min - targetTime->min) / transInterval_g;
+	currentTickcount = SystemTickCount;
+	currentTime = get_current_time(currentTickcount);
+	interval = ((currentTime.day - targetTime->day)*24*60+(currentTime.hour - targetTime->hour)*60 +
+						currentTime.min - targetTime->min);
 	//TODO: exception for reqested Time is too too long ago, no data existed in eeprom
-	/*
-	if (interval > (END_ADDR_EEPROM- START_ADDR_EEPROM)/ DATASAMPLE_PAGE_SIZE)
-	{
-		interval = 500;
-	}
-	else if (interval < -1000)
-	{
-		interval = -500;
-	}
-	*/
 	
-	addr_estimate = timeStampShot_g.currentAddrEEPROM;
-	addr_estimate -= interval * timeStampShot_g.pageSize;
+	if (interval > (END_ADDR_EEPROM- START_ADDR_EEPROM)/ DATASAMPLE_PAGE_SIZE-1)
+	{
+		//target time is an ancient time, send the oldest time I got.
+		interval = (END_ADDR_EEPROM- START_ADDR_EEPROM)/ DATASAMPLE_PAGE_SIZE-1;
+	}
+	else if (interval < 0)
+	{
+		//target time is a future time, send current time data
+		interval = 0;
+	}
+	else
+	{
+		//use timeStampShot_g to calc, since it's a synchronized data.
+		interval = ((timeStampShot_g.time.day - targetTime->day) * 24 * 60 +
+			(timeStampShot_g.time.hour - targetTime->hour) * 60 +
+			(timeStampShot_g.time.min - targetTime->min)) / transInterval_g;
+	}
+	
+#else
+	interval = ((timeStampShot_g.time.day - targetTime->day) * 24 * 60 +
+		(timeStampShot_g.time.hour - targetTime->hour) * 60 +
+		(timeStampShot_g.time.min - targetTime->min))/transInterval_g;
+	
+	if (interval > (END_ADDR_EEPROM - START_ADDR_EEPROM) / DATASAMPLE_PAGE_SIZE-1)
+	{
+		//target time is an ancient time, send the oldest time I got.
+		interval = (END_ADDR_EEPROM - START_ADDR_EEPROM) / DATASAMPLE_PAGE_SIZE-1 ;
+	}
+	else if (interval < 0)
+	{
+		//target time is a future time, send current time data
+		interval = 0;
+	}
+
+
+#endif
+
+	addr_estimate = timeStampShot_g.currentAddrEEPROM - (interval)* timeStampShot_g.pageSize;
+	
 	
 	if (addr_estimate < START_ADDR_EEPROM)
 	{
@@ -197,7 +228,7 @@ UINT16 get_address_from_Time(Date_t *targetTime)
 	printf("interval is %d\r\n", interval);
 	printf("addr_estimate is %d\r\n", addr_estimate);
 
-	return addr_estimate;
+	return (UINT16)addr_estimate;
 
 }
 /*******************************************************************************

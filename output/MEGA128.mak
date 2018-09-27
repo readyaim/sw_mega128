@@ -40,7 +40,7 @@ spi.o:	..\spi.c
 usr_gprs232_7sr.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h
 usr_gprs232_7sr.o:	..\usr_gprs232_7sr.c
 	$(CC) -c $(CFLAGS) ..\usr_gprs232_7sr.c
-data_collection.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h D:\PROGRA~1\iccv7avr\include\stdlib.h D:\PROGRA~1\iccv7avr\include\limits.h
+data_collection.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h D:\PROGRA~1\iccv7avr\include\stdlib.h D:\PROGRA~1\iccv7avr\include\limits.h D:\PROGRA~1\iccv7avr\include\math.h
 data_collection.o:	..\data_collection.c
 	$(CC) -c $(CFLAGS) ..\data_collection.c
 eeprom.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h D:\PROGRA~1\iccv7avr\include\eeprom.h

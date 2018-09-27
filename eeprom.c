@@ -305,7 +305,7 @@ void write_dataSeries_to_eeprom(void)
 
 
 	//TODO: solve addr_write_eeprom overflow
-	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize +1)
+	if (addr_write_eeprom > END_ADDR_EEPROM - timeStampShot_g.pageSize)
 	{
 		addr_write_eeprom = START_ADDR_EEPROM;
 	}

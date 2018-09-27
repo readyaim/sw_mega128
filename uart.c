@@ -13,10 +13,15 @@
 
 /***********************************宏定义**********************************/
 
+#define UART0_U2X 0
 #define UART0_BAUD 38400	 //UART0_BAUD rate 
-#define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
+//#define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
+#define UART0_UBRR ((CPU_CLK + UART0_BAUD * (2 - UART0_U2X) * 4L) / (UART0_BAUD * (2 - UART0_U2X) * 8L) - 1)   //U2X=1
+
+#define UART1_U2X 1
 #define UART1_BAUD 115200	 //UART1_BAUD rate
-#define UART1_UBRR (CPU_CLK/8/UART1_BAUD)			//U2X=1
+#define UART1_UBRR ((CPU_CLK + UART1_BAUD * (2-UART1_U2X) * 4L) / (UART1_BAUD * (2-UART1_U2X) * 8L) - 1)   //U2X=1
+//#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)			
 //#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
@@ -75,7 +80,7 @@ void uart0_init_register(void)  //初始化COM0
 {
 	UINT16 ubrr = UART0_UBRR;
 	UCSR0B = 0x00; //初始化
-	UCSR0A = 0x00; //初始化, *U2X0=0:非倍速模式
+	UCSR0A = 0x00 | (UART0_U2X << U2X0); //uart0 init, U2X0=0, 1x speed mode.
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);//8bit
 	Clr_Bit(UCSR0C, USBS0);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
@@ -702,7 +707,7 @@ void uart1_init_register(void)  //初始化COM0
 	UINT16 ubrr = UART1_UBRR;
 	printf("ubrr = %d\r\n", ubrr);
 	UCSR1B = 0x00; //初始化
-	UCSR1A = 0x00| (1<<U2X1); //初始化, *U2X1=1:倍速模式
+	UCSR1A = 0x00| (UART1_U2X<<U2X1); //uart1 initialization,  *U2X1=1, 2x speeds mode
 	UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit
 	Clr_Bit(UCSR1C, USBS1);        //USBS0=0: 1bit stop
 #ifdef _ATMEGA128A  
