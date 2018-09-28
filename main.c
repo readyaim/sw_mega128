@@ -44,6 +44,7 @@ extern void uart1_init(void);
 extern void test_timer1(void);
 extern void test_EEPROM(void);
 extern  void test_get_address(void);
+extern void requestTimeFromServer(void);
 
 
 
@@ -140,6 +141,7 @@ void main(void)
 	init_modem();
 	printf("Start program! \r\n");
 	resume_last_timeStampSlot();
+	requestTimeFromServer();
 	
     //main_uart0();
     //main_uart1_loopback();

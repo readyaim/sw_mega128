@@ -56,11 +56,12 @@ void requestTimeFromServer(void)
 	UINT8 data;
 	UINT16 i = 0;
 	UINT16 tmphead;
-	UINT8 cmd[6] = { 'r','+','T','i','m','e' };		//LOW8, HIGH8, LOW8, HIGH8
+	UINT8 cmd[8] = { 'r','+','T','i','m','e',0x0D, 0x0A };		//LOW8, HIGH8, LOW8, HIGH8
 	if (modem_ready())
 	{
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < 7; i++)
 		{
+			
 			tmphead = (UART1_TxHead + 1) & UART1_TX_BUFFER_MASK;
 			/* wait for free space in buffer */
 			while (tmphead == UART1_TxTail)

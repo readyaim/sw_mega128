@@ -18,8 +18,8 @@
 //#define UART0_UBRR (CPU_CLK/16/UART0_BAUD-1)
 #define UART0_UBRR ((CPU_CLK + UART0_BAUD * (2 - UART0_U2X) * 4L) / (UART0_BAUD * (2 - UART0_U2X) * 8L) - 1)   //U2X=1
 
-#define UART1_U2X 1
-#define UART1_BAUD 115200	 //UART1_BAUD rate
+#define UART1_U2X 0
+#define UART1_BAUD 38400	 //UART1_BAUD rate
 #define UART1_UBRR ((CPU_CLK + UART1_BAUD * (2-UART1_U2X) * 4L) / (UART1_BAUD * (2-UART1_U2X) * 8L) - 1)   //U2X=1
 //#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)		//U2X=1	
 //#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
@@ -622,6 +622,7 @@ void uart1_rx_isr(void)
 #if 1
 	UINT8 ch;
 	ch = UDR1;
+	printf("%x\r\n", ch);
 	//uart1_putchar(ch);
 	parseStr2Cmd(ch);
 #else
