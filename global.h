@@ -16,6 +16,11 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+/* switch on/off */
+//#define _TEST_CODE_INCLUDED
+//#define _DEBUG_MODE
+#define _ICCV7_FOR_AVR
+
 #define UINT8 unsigned char
 #define INT8 signed char
 #define UINT16 unsigned int
@@ -65,15 +70,13 @@
 #if ( UART1_TX_BUFFER_SIZE & UART1_TX_BUFFER_MASK )
 #error RX buffer size is not a power of 2
 #endif
-
-
-
-
-
+#define UART1_MAX_RX_BUFFER 16	//uart1 Rx buffer size
 
 extern volatile UINT16 TXC1_RD;   //发送缓冲区读指针
 extern volatile UINT16 TXC1_WR;   //发送缓冲区写指针
 /* uart.h end*/
+
+
 extern void beep(void);
 extern void delay_us(UINT16 microsecond);
 extern void delay_ms(UINT16 millisecond);

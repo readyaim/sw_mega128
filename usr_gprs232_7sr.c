@@ -176,7 +176,7 @@ void gprs_7SR_init(void)
 
 
 
-#ifdef _DUMMY_CODE
+#ifdef _TEST_CODE_INCLUDED
 /*******************************************************************************
 * Function:     test_strcmp
 * Arguments:
@@ -241,5 +241,5 @@ void test_usr()
 }
 
 
-#endif // _DUMMY_CODE
+#endif // _TEST_CODE_INCLUDED
 

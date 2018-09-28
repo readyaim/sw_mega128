@@ -31,6 +31,7 @@ UINT8 transInterval_g = 5;
 extern UINT16 get_data_adc(UINT8 channel);
 extern volatile UINT16 addr_write_eeprom;
 
+
 /*******************************************************************************
 * Function:      get_data()
 * Arguments:
@@ -56,13 +57,13 @@ UINT16 get_data(UINT8 channel)
 
 /*******************************************************************************
 * Function:      get_current_time()
-* Arguments:   currentTickCout and timeStampShot_g
+* Arguments:   ptime: save the Time result to pTime, currentTickCout
 * Return:		  newTime;
 * Description:   caculate Date_t time according to currentTickCount and timeStampShot_g.
-					   timeStampShot_g is updated through GPRS module, activated by server. (by url ???)
+					   timeStampShot_g is updated through GPRS module, activated by server. (!201809181620)
 					   TODO
 *******************************************************************************/
-Date_t get_current_time(UINT32 currentTickCout)
+void get_current_time(Date_t* ptime, UINT32* pcurrentTickCout)
 {
 	/*
 #ifdef _DATA_COLLECT_DEBUG
@@ -81,25 +82,26 @@ Date_t get_current_time(UINT32 currentTickCout)
 	static flag = 0;
 	if (timeStampShot_g.flag == 1)
 	{
+		//new timeStampShot_g, save to timeStame_s
 		timeStampShot_g.flag = 0;
 		timeStamp_s = timeStampShot_g;
 	}
 
-	if (currentTickCout == timeStamp_s.tickeCounter)
+	if (*pcurrentTickCout == timeStamp_s.tickeCounter)
 	{
-		return timeStamp_s.time;
+		*ptime=timeStamp_s.time;
 	}
-	else if (currentTickCout > timeStamp_s.tickeCounter)
+	else if (*pcurrentTickCout > timeStamp_s.tickeCounter)
 	{
-		tickCounterDiff = currentTickCout - timeStamp_s.tickeCounter;
+		tickCounterDiff = *pcurrentTickCout - timeStamp_s.tickeCounter;
 	}
 	else
 	{
 		//TODO, exception when tickcouter overflow.
-		tickCounterDiff = 4294967295 - timeStamp_s.tickeCounter + currentTickCout;
+		tickCounterDiff = 4294967295 - timeStamp_s.tickeCounter + *pcurrentTickCout;
 		//NOP();
 	}
-	newTime = timeStamp_s.time;	//copy time to new time
+	*ptime = timeStamp_s.time;	//copy time to new time
 	//TODO caculate difference.
 
 	//1s: 5tick
@@ -113,49 +115,50 @@ Date_t get_current_time(UINT32 currentTickCout)
 	{
 		// tickerDiff is small, save the caculation
 		tmp_min = (tickCounterDiff) / MINTICKERTIME;
-		newTime.min += tmp_min;
+		ptime->min += tmp_min;
 	}
 	else
 	{	//full calculation
 		tmp_day = tickCounterDiff / DAYTICKERTIME;
-		newTime.day += tmp_day;
+		ptime->day += tmp_day;
 		tmp_hour = (tickCounterDiff % DAYTICKERTIME) / HOURTICKERTIME;
-		newTime.hour += tmp_hour;
+		ptime->hour += tmp_hour;
 		tmp_min = (tickCounterDiff%HOURTICKERTIME) / MINTICKERTIME;
-		newTime.min += tmp_min;
+		ptime->min += tmp_min;
 	}
 
-	if (newTime.min > 59)
+	if (ptime->min > 59)
 	{
-		newTime.min -= 60;
-		newTime.hour += 1;
+		ptime->min -= 60;
+		ptime->hour += 1;
 	}
-	else if (newTime.hour > 23)
+	else if (ptime->hour > 23)
 	{
-		newTime.hour -= 24;
-		newTime.day += 1;
+		ptime->hour -= 24;
+		ptime->day += 1;
 	}
-	else if (newTime.day > 30)
+	else if (ptime->day > 30)
 	{
 		//TODO: day 30 or 31 a month???
-		newTime.day -= 30;
-		newTime.mon += 1;
+		ptime->day -= 30;
+		ptime->mon += 1;
 	}
-	else if (newTime.mon > 12)
+	else if (ptime->mon > 12)
 	{
-		newTime.mon -= 12;
-		newTime.year += 1;
+		ptime->mon -= 12;
+		ptime->year += 1;
 	}
-	else if (newTime.year > 99)
+	else if (ptime->year > 99)
 	{
-		newTime.year -= 99;
-		newTime.year1 += 1;
+		ptime->year -= 99;
+		ptime->year1 += 1;
 	}
 
 	//Update timeStamp_s
-	timeStamp_s.time = newTime;
-	timeStamp_s.tickeCounter = currentTickCout;
-	return newTime;
+	timeStamp_s.time = *ptime;
+	timeStamp_s.tickeCounter = *pcurrentTickCout;
+	//return newTime;
+	//*ptime = newTime;
 	//#endif
 }
 
@@ -165,18 +168,18 @@ Date_t get_current_time(UINT32 currentTickCout)
 * Return:		  the start address of data for target date(Date_t)
 * Description:  calc address offset with Time
 *******************************************************************************/
-UINT16 get_address_from_Time(Date_t *targetTime)
+void get_address_from_Time(UINT16* ptrAddr, Date_t *ptrTargetTime)
 {
 	INT32 addr_estimate;
 	INT32 interval;
 #if 0
 	UINT32 currentTickcount;
 	Date_t currentTime;
-	//TODO: make sure targetTime is older than timeStampShot
+	//TODO: make sure ptrTargetTime is older than timeStampShot
 	currentTickcount = SystemTickCount;
-	currentTime = get_current_time(currentTickcount);
-	interval = ((currentTime.day - targetTime->day)*24*60+(currentTime.hour - targetTime->hour)*60 +
-						currentTime.min - targetTime->min);
+	get_current_time(&currentTime, &currentTickcount);
+	interval = ((currentTime.day - ptrTargetTime->day)*24*60+(currentTime.hour - ptrTargetTime->hour)*60 +
+						currentTime.min - ptrTargetTime->min);
 	//TODO: exception for reqested Time is too too long ago, no data existed in eeprom
 	
 	if (interval > (END_ADDR_EEPROM- START_ADDR_EEPROM)/ DATASAMPLE_PAGE_SIZE-1)
@@ -192,15 +195,15 @@ UINT16 get_address_from_Time(Date_t *targetTime)
 	else
 	{
 		//use timeStampShot_g to calc, since it's a synchronized data.
-		interval = ((timeStampShot_g.time.day - targetTime->day) * 24 * 60 +
-			(timeStampShot_g.time.hour - targetTime->hour) * 60 +
-			(timeStampShot_g.time.min - targetTime->min)) / transInterval_g;
+		interval = ((timeStampShot_g.time.day - ptrTargetTime->day) * 24 * 60 +
+			(timeStampShot_g.time.hour - ptrTargetTime->hour) * 60 +
+			(timeStampShot_g.time.min - ptrTargetTime->min)) / transInterval_g;
 	}
 	
 #else
-	interval = ((timeStampShot_g.time.day - targetTime->day) * 24 * 60 +
-		(timeStampShot_g.time.hour - targetTime->hour) * 60 +
-		(timeStampShot_g.time.min - targetTime->min))/transInterval_g;
+	interval = ((timeStampShot_g.time.day - ptrTargetTime->day) * 24 * 60 +
+		(timeStampShot_g.time.hour - ptrTargetTime->hour) * 60 +
+		(timeStampShot_g.time.min - ptrTargetTime->min))/transInterval_g;
 	
 	if (interval > (END_ADDR_EEPROM - START_ADDR_EEPROM) / DATASAMPLE_PAGE_SIZE-1)
 	{
@@ -212,13 +215,9 @@ UINT16 get_address_from_Time(Date_t *targetTime)
 		//target time is a future time, send current time data
 		interval = 0;
 	}
-
-
 #endif
 
 	addr_estimate = timeStampShot_g.currentAddrEEPROM - (interval)* timeStampShot_g.pageSize;
-	
-	
 	if (addr_estimate < START_ADDR_EEPROM)
 	{
 		addr_estimate = END_ADDR_EEPROM - timeStampShot_g.pageSize+ addr_estimate;
@@ -228,7 +227,7 @@ UINT16 get_address_from_Time(Date_t *targetTime)
 	printf("interval is %d\r\n", interval);
 	printf("addr_estimate is %d\r\n", addr_estimate);
 
-	return (UINT16)addr_estimate;
+	*ptrAddr = (UINT16)addr_estimate;
 
 }
 /*******************************************************************************
@@ -418,7 +417,7 @@ void process_series_data_wind_1m(UINT32 currentTickCount, INT16(*data_wind_serie
 
 	/* windDirection */
 	dataSample_g.windDirection1m.data = data_wind_series[index_1m][index_windDirection];
-	dataSample_g.windDirection1m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windDirection1m.time, &currentTickCount);
 	if (dataSample_g.windDirection1m.data > dataSample_max_g.windDirection1m.data)
 	{
 		dataSample_max_g.windDirection1m = dataSample_g.windDirection1m;
@@ -426,7 +425,7 @@ void process_series_data_wind_1m(UINT32 currentTickCount, INT16(*data_wind_serie
 
 	/* windSpeed */
 	dataSample_g.windSpeed1m.data = data_wind_series[index_1m][index_windSpeed];
-	dataSample_g.windSpeed1m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windSpeed1m.time, &currentTickCount);
 	if (dataSample_g.windSpeed1m.data > dataSample_max_g.windSpeed1m.data)
 	{
 		dataSample_max_g.windSpeed1m = dataSample_g.windSpeed1m;
@@ -439,7 +438,7 @@ void process_series_data_wind_1m(UINT32 currentTickCount, INT16(*data_wind_serie
 * Return:		  data;
 * Description:   process windDirection, windSpeed;
 *******************************************************************************/
-void process_series_data_wind_2m(UINT32 currentTickCount, INT16(*data_wind_series)[2])
+void process_series_data_wind_2m(UINT32* ptrCurrentTickCount, INT16(*data_wind_series)[2])
 {
 	/* TODO: change these index to #define*/
 	//const UINT8 index_windDirection = 0, index_windSpeed = 1;
@@ -448,7 +447,7 @@ void process_series_data_wind_2m(UINT32 currentTickCount, INT16(*data_wind_serie
 
 	/* windDirection */
 	dataSample_g.windDirection2m.data = data_wind_series[index_2m][index_windDirection];
-	dataSample_g.windDirection2m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windDirection2m.time, ptrCurrentTickCount);
 	if (dataSample_g.windDirection2m.data > dataSample_max_g.windDirection2m.data)
 	{
 		dataSample_max_g.windDirection2m = dataSample_g.windDirection2m;
@@ -456,7 +455,7 @@ void process_series_data_wind_2m(UINT32 currentTickCount, INT16(*data_wind_serie
 
 	/* windSpeed */
 	dataSample_g.windSpeed2m.data = data_wind_series[index_2m][index_windSpeed];
-	dataSample_g.windSpeed2m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windSpeed2m.time, ptrCurrentTickCount);
 	if (dataSample_g.windSpeed2m.data > dataSample_max_g.windSpeed2m.data)
 	{
 		dataSample_max_g.windSpeed2m = dataSample_g.windSpeed2m;
@@ -478,7 +477,7 @@ void process_series_data_wind_10m(UINT32 currentTickCount, INT16(*data_wind_seri
 
 	/* windDirection */
 	dataSample_g.windDirection10m.data = data_wind_series[index_10m][index_windDirection];
-	dataSample_g.windDirection10m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windDirection10m.time, &currentTickCount);
 	if (dataSample_g.windDirection10m.data > dataSample_max_g.windDirection10m.data)
 	{
 		dataSample_max_g.windDirection10m = dataSample_g.windDirection10m;
@@ -486,7 +485,7 @@ void process_series_data_wind_10m(UINT32 currentTickCount, INT16(*data_wind_seri
 
 	/* windSpeed */
 	dataSample_g.windSpeed10m.data = data_wind_series[index_10m][index_windSpeed];
-	dataSample_g.windSpeed10m.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.windSpeed10m.time, &currentTickCount);
 	if (dataSample_g.windSpeed10m.data > dataSample_max_g.windSpeed10m.data)
 	{
 		dataSample_max_g.windSpeed10m = dataSample_g.windSpeed10m;
@@ -506,7 +505,7 @@ void process_series_data_1min(UINT32 currentTickCount)
 	//UINT16 maxdata = 0, mindata = 0xFFFF;
 	//UINT32 datasum = 0, tickCountDiff;
 	/* evaporation */
-	dataSample_g.evaporation.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.evaporation.time, &currentTickCount);
 	// save max and min, with time
 	if (dataSample_g.evaporation.data > dataSample_max_g.evaporation.data)
 	{
@@ -523,7 +522,7 @@ void process_series_data_1min(UINT32 currentTickCount)
 	}
 #endif
 	/* sunShineTime */
-	dataSample_g.sunShineTime.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.sunShineTime.time, &currentTickCount);
 	// save max and min, with time
 	if (dataSample_g.sunShineTime.data > dataSample_max_g.sunShineTime.data)
 	{
@@ -543,7 +542,7 @@ void process_series_data_1min(UINT32 currentTickCount)
 
 
 	/* rain */
-	dataSample_g.rain.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.rain.time, &currentTickCount);
 	// save max and min, with time
 	if (dataSample_g.rain.data > dataSample_max_g.rain.data)
 	{
@@ -608,7 +607,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 #ifdef _PRINT_ADC
 	printf("temperature sum is %d \r\n", datasum);
 #endif
-	dataSample_g.temp.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.temp.time, &currentTickCount);
 	// 5. save max and min, with time
 	if (dataSample_g.temp.data > dataSample_max_g.temp.data)
 	{
@@ -650,7 +649,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 #ifdef _PRINT_ADC
 	printf("humidity sum is %d \r\n", datasum);
 #endif
-	dataSample_g.humidity.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.humidity.time, &currentTickCount);
 
 
 	if (dataSample_g.humidity.data > dataSample_max_g.humidity.data)
@@ -695,7 +694,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 #ifdef _PRINT_ADC
 	printf("airPressure sum is %d \r\n", datasum);
 #endif
-	dataSample_g.airPressure.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.airPressure.time, &currentTickCount);
 
 
 	if (dataSample_g.airPressure.data > dataSample_max_g.airPressure.data)
@@ -739,7 +738,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 #ifdef _PRINT_ADC
 	printf("groundTemp sum is %d \r\n", datasum);
 #endif
-	dataSample_g.groundTemp.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.groundTemp.time, &currentTickCount);
 
 
 	if (dataSample_g.groundTemp.data > dataSample_max_g.groundTemp.data)
@@ -783,7 +782,7 @@ void process_series_data_10sec(DataSeries_t *dataseries, UINT32 currentTickCount
 #ifdef _PRINT_ADC
 	printf("radiation sum is %d \r\n", datasum);
 #endif
-	dataSample_g.radiation.time = get_current_time(currentTickCount);
+	get_current_time(&dataSample_g.radiation.time, &currentTickCount);
 
 
 	if (dataSample_g.radiation.data > dataSample_max_g.radiation.data)
@@ -866,7 +865,7 @@ void ticker_timer1_handler(void)
 			if (currentTickCount % 600 == 0)
 			{
 				// 2min, wind
-				process_series_data_wind_2m(currentTickCount, data_wind_series);
+				process_series_data_wind_2m(&currentTickCount, data_wind_series);
 
 			}
 
@@ -943,7 +942,7 @@ void ticker_timer1_handler(void)
 		if ((currentTickCount) % (transInterval_g * 300) == 0)
 		//if (currentTickCount % (transInterval_g * 300) == 0)
 		{
-			//Save the data
+			//Routine save the data
 			/* add to fifo, write eeprom commands, extreme value(with date)*/
 			(*CommandFifo.AddFifo)(&CommandFifo, 0x50);
 			//printf("fifo cmd 0x50: write eeprom commands\r\n");
@@ -957,14 +956,14 @@ void ticker_timer1_handler(void)
 
 		if ((currentTickCount) % (transInterval_g * 300) == 0)
 		{
-			//Save timeStampShot in eeprom, in case restart.
+			//Routine save timeStampShot in eeprom, in case restart.
 			//when restart, mcu shall resume timeStampShot in eeprom.
 #if 1	
 			//1 tick shift to write eeprom
 			//Update timeStampShot_g
 			
-			timeStampShot_g.time = get_current_time(currentTickCount);	//must be run 1rst, before tickcounter and flag changed.
-			timeStampShot_g.tickeCounter = (currentTickCount);
+			get_current_time(&timeStampShot_g.time, &currentTickCount);	//must be run 1rst, before tickcounter and flag changed.
+			timeStampShot_g.tickeCounter = currentTickCount;
 			timeStampShot_g.flag = 1;
 			timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;		//TODO, 
 																		//Save to eeprom
@@ -972,6 +971,16 @@ void ticker_timer1_handler(void)
 			//printf("fifo cmd 0x50: write eeprom commands\r\n");
 #endif
 		}
+
+		if ((currentTickCount) % (transInterval_g * 300) == 0)
+		{
+			//Routine upload the data
+			/* add to fifo, write eeprom commands, extreme value(with date)*/
+			(*CommandFifo.AddFifo)(&CommandFifo, 0x53);
+			//printf("fifo cmd 0x53: routine upload data\r\n");
+
+		}
+
 	}
 }
 
@@ -985,7 +994,7 @@ void test_get_address(void)
 {
 	Date_t targetTime = { 20,18,9,12,17,5 };
 	UINT16 addr;
-	addr = get_address_from_Time(&targetTime);
+	get_address_from_Time(&addr, &targetTime);
 	NOP();
 }
 

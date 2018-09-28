@@ -49,7 +49,7 @@ void timer1_init(void)
 {
     TCCR1A = 0x00;  //disconnect comparator OCnA/B/C to IO, PWM
     TCCR1C = 0x00;  // force output compare for channel A/B/C
-#ifdef _DEBUG_TIMER1
+#ifdef _DEBUG_MODE
     TCCR1B = (1 << CS10 | 1<<WGM12);  //clock select b'001', CPU_CLK/1
     //TCCR1B = (1 << CS10 );  //clock select b'001', CPU_CLK/1
     TCNT1H = 0x00;  //
@@ -77,7 +77,7 @@ void timer1_init(void)
     //OCR1BL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
     //Set_Bit(TIMSK, TOIE1);  //enable timer1 overflow interrupt
 	Set_Bit(TIMSK, OCIE1A);  //enable timer1 overflow interrupt
-#endif // !_DEBUG_TIMER1    
+#endif // !_DEBUG_MODE    
     
     //OCR1BH = 0x1C; //设置 TC1 的 输出比较寄存器B 高8位值
     //OCR1BL = 0x20; //设置 TC1 的 输出比较寄存器B 低8位值
@@ -130,7 +130,7 @@ void timer3_init(void)
     TCCR3B = (1 << CS32);  //clock select b'100', CPU_CLK/256
     TCNT3H = 0xE7;  //Set TC1 counter TCNT1 = 0xE796, div=64,  counter=0xFFFF-0xe796=6250，fosc=8MHz, 0.2s
     TCNT3L = 0x96;  //Set TC1 counter TCNT1 = 0xCF2C, div=64,  counter=0xFFFF-0xCF2C=12500，fosc=8MHz, 0.1s
-#endif // !_DEBUG_TIMER1    
+#endif // !_DEBUG_TIMER3
                     //OCR1AH = 0x1C; //设置 TC1 的 输出比较寄存器A 高8位值
                     //OCR1AL = 0x20; //设置 TC1 的 输出比较寄存器A 低8位值
                     //OCR1BH = 0x1C; //设置 TC1 的 输出比较寄存器B 高8位值
@@ -264,7 +264,7 @@ void timer3_ovf_isr(void)
 #else
     TCNT3H = 0xE7;  //Set TC1 counter TCNT1 = 0xE796, div=64,  counter=0xFFFF-0xe796=6250，fosc=8MHz, 0.2s
     TCNT3L = 0x96;  //Set TC1 counter TCNT1 = 0xCF2C, div=64,  counter=0xFFFF-0xCF2C=12500，fosc=8MHz, 0.1s
-#endif // !_DEBUG_TIMER1    
+#endif // !_DEBUG_TIMER3    
     beep();
 }
 

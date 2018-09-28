@@ -21,15 +21,16 @@
 #define UART1_U2X 1
 #define UART1_BAUD 115200	 //UART1_BAUD rate
 #define UART1_UBRR ((CPU_CLK + UART1_BAUD * (2-UART1_U2X) * 4L) / (UART1_BAUD * (2-UART1_U2X) * 8L) - 1)   //U2X=1
-//#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)			
+//#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)		//U2X=1	
 //#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
 
 #define RXC0_BUFF_SIZE 128   //接受缓冲区字节数
 #define TXC0_BUFF_SIZE 128   //发送缓冲区字节数
-#define UART1_MAX_RX_BUFFER 16	//uart1 Rx buffer size
 
+extern void parseStr2Date(UINT8 *str, Date_t *pdateTime);
+extern void parseStr2Cmd(UINT8 ch);
 extern BOOL AddFifo(struct Fifo *this, UINT8 data);
-extern UINT16 addr_write_eeprom;
+
 
 // add static to forbiden other file to use
 static UINT8 RXC0_BUFF[RXC0_BUFF_SIZE];   //定义接受缓冲区
@@ -52,25 +53,7 @@ volatile UINT16 UART1_TxHead;
 volatile UINT16 UART1_TxTail;
 
 
-/****************************************************************************
-Function:       char2int()
-Arguments:    char
-Returns:
-Descriptions:  transfer char to int
-****************************************************************************/
-UINT8 char2int(UINT8 ch)
-{
-	UINT8 t;
-	t = 'a';
-	//return (UINT8)((UINT16)(ch));
-	if ((ch >= '0') && (ch <= '9'))
-		return ch - 48;
-	else if ((ch >= 'A') && (ch <= 'Z'))
-		return ch - 'A' + 65;
-	else if ((ch >= 'a') && (ch <= 'z'))
-		return ch - 'a' + 97;
-	else return (-1);
-}
+
 /****************************************************************************
 Function Name: uart0初始化程序
 Arguments:
@@ -434,130 +417,6 @@ void uart1_gets(UINT8 *rcv)
 }
 
 /*******************************************************************************
-* Function:     uart1_TimeParsing()
-* Arguments:  str: the date(Y,Y,M,D,H,M), the length of string is 6.
-					 pdateTime: the pointer to Time
-* Return:		 0: no error, 1 wrong input.
-* Description:  transfer str[6](in hex) to Date_t
-*******************************************************************************/
-void uart1_TimeParsing(UINT8 *str, Date_t *pdateTime)
-{
-	pdateTime->year1 = *str;
-	pdateTime->year = *(str + 1);
-	pdateTime->mon = *(str + 2);
-	pdateTime->day = *(str + 3);
-	pdateTime->hour = *(str + 4);
-	pdateTime->min = *(str + 5);
-	printf("new time is %d,%d:%d\r\n", pdateTime->day, pdateTime->hour, pdateTime->min);
-
-}
-
-
-/*******************************************************************************
-* Function:     uart1_cmdParsing()
-* Arguments:  ch, the received char
-* Return:
-* Description:  parsing the received char, add related cmds to fifo, combine multi-chars to 1 command.(update time)
-*******************************************************************************/
-void uart1_cmdParsing(UINT8 ch)
-{
-	static UINT8 state = 0;
-	static UINT8 char_index = 0;
-	static UINT8 str[UART1_MAX_RX_BUFFER];
-	static UINT32 tickcoutStart;
-	//Date_t newTime;
-	//UINT16 addr_eeprom;
-	UINT8 i = 0;
-
-	switch (state)
-	{
-	case 0:
-		//single char command
-		if (ch > '0' && ch < '9')
-		{
-			AddFifo(&CommandFifo, ch);
-		}
-		else if (ch >= 'a' && ch <= 'o')
-		{
-			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
-			//printf("character %c is received\r\n", ch);
-		}
-		else if (ch >= 0x40 && ch <= 0x43)
-		{
-			//update transInterval_g
-			(*CommandFifo.AddFifo)(&CommandFifo, ch);
-		}
-		else if (ch == '!')
-		{
-			//Time commands are coming.
-			state = 1;				//to next state machine.
-			char_index = 0;		//initiation
-			tickcoutStart = SystemTickCount;		//timeout counter
-		}
-		else if (ch == '"')
-		{
-			//request upload data with attached time
-			state = 2;
-			char_index = 0;
-		}
-		break;
-
-	case 1:
-		//update timeStampShot_g, such as: !201809171750
-		//multi-char commands
-		if (ch>60)
-		{
-			//non-number is received, quit update Time command mode.
-			printf("non-valid input, quit state %d \r\n", state);
-			state = 0;
-		}
-		else
-		{
-			//Update timeStampShot_g
-			str[char_index++] = ch;
-			if (char_index > 5)
-			{
-				//TODO:
-				uart1_TimeParsing(str, &timeStampShot_g.time);
-				timeStampShot_g.tickeCounter = SystemTickCount;
-				timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;
-				timeStampShot_g.flag = 1;		//new timeStamp, update get_current_time
-				state = 0;
-
-				printf("timeStampShot_g is updated\r\n");
-
-			}
-		}
-		break;
-	case 2:
-		//upload eeprom data at requested time, such as: "201809201750
-		//multi-char commands
-		if (ch > 60)
-		{
-			//non-number is received, quit update Time command mode.
-			printf("non-valid input, quit state %d \r\n", state);
-			state = 0;
-		}
-		else
-		{
-			//Update timeStampShot_g
-			str[char_index++] = ch;
-			if (char_index > 5)
-			{
-				//TODO:
-				uart1_TimeParsing(str, &uploadTime_g);
-				//AddFifo(&CommandFifo, 0x51);
-				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);		//add to fifo, read eeprom commands
-				state = 0;
-				printf("upload data is requested\r\n");
-			}
-		}
-	default:
-		break;
-	}
-}
-
-/*******************************************************************************
 * Function:     uart1_checkCMDPolling()
 * Arguments:
 * Return:
@@ -570,7 +429,7 @@ void uart1_checkCMDPolling(void)
 	{
 		ch = RXC1_BUFF[RXC1_RD];
 		uart1_putchar(ch);
-		uart1_cmdParsing(ch);
+		parseStr2Cmd(ch);
 		if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
 			RXC1_RD++;
 		else
@@ -705,7 +564,7 @@ Returns: :
 void uart1_init_register(void)  //初始化COM0
 {
 	UINT16 ubrr = UART1_UBRR;
-	printf("ubrr = %d\r\n", ubrr);
+	//printf("ubrr = %d\r\n", ubrr);
 	UCSR1B = 0x00; //初始化
 	UCSR1A = 0x00| (UART1_U2X<<U2X1); //uart1 initialization,  *U2X1=1, 2x speeds mode
 	UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit
@@ -764,7 +623,7 @@ void uart1_rx_isr(void)
 	UINT8 ch;
 	ch = UDR1;
 	//uart1_putchar(ch);
-	uart1_cmdParsing(ch);
+	parseStr2Cmd(ch);
 #else
 	RXC1_BUFF[RXC1_WR] = UDR1;
 	if (RXC1_WR < (RXC1_BUFF_SIZE - 1))
@@ -849,7 +708,26 @@ void main_uart1_loopback(void)
 
 
 
-#ifdef _DUMMY_CODE
+#ifdef _TEST_CODE_INCLUDED
+/****************************************************************************
+Function:       char2int()
+Arguments:    char
+Returns:
+Descriptions:  transfer char to int
+****************************************************************************/
+UINT8 char2int(UINT8 ch)
+{
+	UINT8 t;
+	t = 'a';
+	//return (UINT8)((UINT16)(ch));
+	if ((ch >= '0') && (ch <= '9'))
+		return ch - 48;
+	else if ((ch >= 'A') && (ch <= 'Z'))
+		return ch - 'A' + 65;
+	else if ((ch >= 'a') && (ch <= 'z'))
+		return ch - 'a' + 97;
+	else return (-1);
+}
 
 /****************************************************************************
 Function Name: test_char2int()
@@ -908,8 +786,8 @@ void test_copystr2TimeStamp(void)
 
 	while (*s)
 	{
-		uart1_cmdParsing(*s++);
+		parseStr2Cmd(*s++);
 	}
 }
-#endif // _DUMMY_CODE
+#endif // _TEST_CODE_INCLUDED
 

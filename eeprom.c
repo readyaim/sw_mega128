@@ -9,18 +9,18 @@
 ****************************************************************************/
 
 #include "global.h"
-#include <eeprom.h>
+#include "eeprom.h"
 
 extern volatile UINT16 UART1_TxHead;
 extern volatile UINT16 UART1_TxTail;
 extern UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //定义发送缓冲区
-extern Date_t get_current_time(UINT32 currentTickCout);
+extern void get_current_time(Date_t* pTime, UINT32* currentTickCout);
 
 volatile UINT16 addr_write_eeprom = START_ADDR_EEPROM;
 volatile UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
 
-#if 1
+#ifdef _ICCV7_FOR_AVR
 
 #define EEPROM_read EEPROMread
 #define EEPROM_write EEPROMwrite
@@ -383,8 +383,6 @@ void read_eeprom_to_UART1buffer(UINT16 addr)
 	UINT8 heads[8] = { 'D','A','T','A',0x02,0x01, 0x01,0x00 };		//LOW8, HIGH8, LOW8, HIGH8
 	//TODO
 	//1. make sure buffer is empty
-
-
 	/* head*/
 	for (i = 0; i < 8; i++)
 	{
@@ -481,7 +479,6 @@ void write_tickCountTime_to_eeprom(void)
 
 	
 	//write Time
-	//time = get_current_time(timeStampShot_g.tickeCounter);
 	EEPROM_write(addr++, timeStampShot_g.time.year1);
 	EEPROM_write(addr++, timeStampShot_g.time.year);
 	EEPROM_write(addr++, timeStampShot_g.time.mon);
@@ -502,7 +499,7 @@ void write_tickCountTime_to_eeprom(void)
 	*/
 }
 
-
+#ifdef _TEST_CODE_INCLUDED
 /*******************************************************************************
 * Function:     test_EEPROM()
 * Arguments:  
@@ -579,3 +576,4 @@ void test_EEPROMwriteSpeed(void)
 	NOP();
 
 }
+#endif

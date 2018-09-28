@@ -21,9 +21,137 @@ extern void read_eepromCtrledByUART1(UINT8 addOffset);
 extern void init_port_adc0(void);
 extern void read_eeprom_to_UART1buffer(UINT16 addr);
 extern void write_tickCountTime_to_eeprom(void);
-extern UINT16 get_address_from_Time(Date_t *targetTime);
+extern void get_address_from_Time(UINT16* ptrAddr, Date_t *targetTime);
 extern BOOL IsEmpty(struct Fifo *this);
 extern UINT8 FetchFifo(struct Fifo *this);
+extern volatile UINT16 addr_write_eeprom;
+extern void get_current_time(Date_t* pTime, UINT32* currentTickCout);
+
+
+/*******************************************************************************
+* Function:     parseStr2Date()
+* Arguments:  str: the date(Y,Y,M,D,H,M), the length of string is 6.
+					 pdateTime: the pointer to Time
+* Return:		 0: no error, 1 wrong input.
+* Description:  transfer str[6](in hex) to Date_t
+*******************************************************************************/
+void parseStr2Date(UINT8 *str, Date_t *pdateTime)
+{
+	pdateTime->year1 = *str;
+	pdateTime->year = *(str + 1);
+	pdateTime->mon = *(str + 2);
+	pdateTime->day = *(str + 3);
+	pdateTime->hour = *(str + 4);
+	pdateTime->min = *(str + 5);
+	printf("new time is %d,%d:%d\r\n", pdateTime->day, pdateTime->hour, pdateTime->min);
+
+}
+
+
+/*******************************************************************************
+* Function:     parseStr2Cmd()
+* Arguments:  ch, the received char
+* Return:
+* Description:  parsing the received char, add related cmds to fifo, combine multi-chars to 1 command.(update time)
+*******************************************************************************/
+void parseStr2Cmd(UINT8 ch)
+{
+	static UINT8 state = 0;
+	static UINT8 char_index = 0;
+	static UINT8 str[UART1_MAX_RX_BUFFER];
+	static UINT32 tickcoutStart;
+	//Date_t newTime;
+	//UINT16 addr_eeprom;
+	UINT8 i = 0;
+
+	switch (state)
+	{
+	case 0:
+		//single char command
+		if (ch > '0' && ch < '9')
+		{
+			AddFifo(&CommandFifo, ch);
+		}
+		else if (ch >= 'a' && ch <= 'o')
+		{
+			(*CommandFifo.AddFifo)(&CommandFifo, ch);	//add to fifo, read eeprom commands
+			//printf("character %c is received\r\n", ch);
+		}
+		else if (ch >= 0x40 && ch <= 0x43)
+		{
+			//update transInterval_g
+			(*CommandFifo.AddFifo)(&CommandFifo, ch);
+		}
+		else if (ch == '!')
+		{
+			//Time commands are coming.
+			state = 1;				//to next state machine.
+			char_index = 0;		//initiation
+			tickcoutStart = SystemTickCount;		//timeout counter
+		}
+		else if (ch == '"')
+		{
+			//request upload data with attached time
+			state = 2;
+			char_index = 0;
+		}
+		break;
+
+	case 1:
+		//update timeStampShot_g, such as: !201809171750
+		//multi-char commands
+		if (ch > 60)
+		{
+			//non-number is received, quit update Time command mode.
+			printf("non-valid input, quit state %d \r\n", state);
+			state = 0;
+		}
+		else
+		{
+			//Update timeStampShot_g
+			str[char_index++] = ch;
+			if (char_index > 5)
+			{
+				//TODO:
+				parseStr2Date(str, &timeStampShot_g.time);
+				timeStampShot_g.tickeCounter = SystemTickCount;
+				timeStampShot_g.currentAddrEEPROM = addr_write_eeprom;
+				timeStampShot_g.flag = 1;		//new timeStamp, update get_current_time
+				state = 0;
+
+				printf("timeStampShot_g is updated\r\n");
+
+			}
+		}
+		break;
+	case 2:
+		//upload eeprom data at requested time, such as: "201809201750
+		//multi-char commands
+		if (ch > 60)
+		{
+			//non-number is received, quit update Time command mode.
+			printf("non-valid input, quit state %d \r\n", state);
+			state = 0;
+		}
+		else
+		{
+			//Update timeStampShot_g
+			str[char_index++] = ch;
+			if (char_index > 5)
+			{
+				//TODO:
+				parseStr2Date(str, &uploadTime_g);
+				//AddFifo(&CommandFifo, 0x51);
+				(*CommandFifo.AddFifo)(&CommandFifo, 0x51);		//add to fifo, read eeprom commands
+				state = 0;
+				printf("upload data is requested\r\n");
+			}
+		}
+	default:
+		break;
+	}
+}
+
 
 /*******************************************************************************
 * Function:  processCmd()
@@ -36,6 +164,7 @@ void processCmd(UINT8 data)
     UINT8 command, para;
     //UINT8 str[80];
 	UINT16 addr_eeprom;
+	Date_t uploadTime;
     /*struct Result result;
     LED_Status = LED_QuickFlash;*/
     command = (data & 0xF0) >> 4;
@@ -129,14 +258,20 @@ void processCmd(UINT8 data)
 			case 1:
 				//Upload data
 				printf("run 0x51\r\n");
-				addr_eeprom = get_address_from_Time(&uploadTime_g);
+				get_address_from_Time(&addr_eeprom, &uploadTime_g);
 				read_eeprom_to_UART1buffer(addr_eeprom);
 				break;
 			case 2:
 				printf("run 0x52\r\n");
 				write_tickCountTime_to_eeprom();
 				break;
-			case 3: //Reset(); break;
+			case 3: 
+				printf("0x53: routine upload\r\n");
+				get_current_time(&uploadTime, &SystemTickCount);
+				get_address_from_Time(&addr_eeprom, &uploadTime);
+				read_eeprom_to_UART1buffer(addr_eeprom);
+				
+				//Reset(); break;
 			default://printf("Illegal command!!\r\n"); 
 				break;
 			}
@@ -210,6 +345,8 @@ void processCmd(UINT8 data)
     //LED_Status = LED_SlowFlash;
     return;
 }
+
+#ifdef _TEST_CODE_INCLUDED
 /*******************************************************************************
 * Function:  timer2_processCmd()
 * Arguments:  
@@ -260,6 +397,7 @@ void uart1_processCmd(void)
         uart1_checkCMDPolling();
     }
 }
+#endif
 /*******************************************************************************
 * Function:     ticker_processCmd()
 * Arguments:
