@@ -139,6 +139,7 @@ void main(void)
 	init_port_adc0();
 	uart1_init();
 	init_modem();
+	PORTG = PORTG | 0x1B;
 	printf("Start program! \r\n");
 	resume_last_timeStampSlot();
 	requestTimeFromServer();

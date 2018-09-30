@@ -19,7 +19,7 @@
 #define UART0_UBRR ((CPU_CLK + UART0_BAUD * (2 - UART0_U2X) * 4L) / (UART0_BAUD * (2 - UART0_U2X) * 8L) - 1)   //U2X=1
 
 #define UART1_U2X 0
-#define UART1_BAUD 38400	 //UART1_BAUD rate
+#define UART1_BAUD 9600	 //UART1_BAUD rate
 #define UART1_UBRR ((CPU_CLK + UART1_BAUD * (2-UART1_U2X) * 4L) / (UART1_BAUD * (2-UART1_U2X) * 8L) - 1)   //U2X=1
 //#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)		//U2X=1	
 //#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
@@ -564,7 +564,7 @@ Returns: :
 void uart1_init_register(void)  //初始化COM0
 {
 	UINT16 ubrr = UART1_UBRR;
-	//printf("ubrr = %d\r\n", ubrr);
+	printf("ubrr = %d\r\n", ubrr);
 	UCSR1B = 0x00; //初始化
 	UCSR1A = 0x00| (UART1_U2X<<U2X1); //uart1 initialization,  *U2X1=1, 2x speeds mode
 	UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit
