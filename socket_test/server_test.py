@@ -108,24 +108,33 @@ class TSServProtocol(protocol.Protocol):
         logger.info("...connected from: %s", clnt)
     def dataReceived(self, data):
         #self.transport.write(("[%s] %s"%(ctime(), data.decode())).encode())
-        print(data.decode())
-        str_data = data.decode()
+        print(data.decode("utf-8"))
+        str_data = data.decode('utf-8')
         if (str_data.strip()[0:6]=='r+Time'):
+            print("run here\n")
             strHandler = time.localtime(time.time())
-            strYear = '!'+str(strHandler.tm_year)
-            strMon = str(strHandler.tm_mon) if strHandler.tm_mon>9 else '0'+str(strHandler.tm_mon)
-            strDay = str(strHandler.tm_mday) if strHandler.tm_mday>9 else '0'+str(strHandler.tm_mday)
-            strHour = str(strHandler.tm_hour) if strHandler.tm_hour>9 else '0'+str(strHandler.tm_hour)
-            strMin = str(strHandler.tm_min) if strHandler.tm_min>9 else '0'+str(strHandler.tm_min)
-            strTime = strYear +strMon+strDay+strHour+strMin
-            self.transport.write(("%s"%strTime).encode('utf-8'))
-        
+            strYear = strHandler.tm_year-2000
+            strMon = strHandler.tm_mon
+            strDay = (strHandler.tm_mday)
+            strHour =(strHandler.tm_hour)
+            strMin = (strHandler.tm_min)
+            strTime ='!'+chr(20)+chr(strYear)+chr(strMon)+chr(strDay)+chr(strHour)+chr(strMin)
+            #strTime ='!'+chr(0x05)+chr(0x0a)+chr(0x05)+chr(0x0A)+chr(0x05)+chr(0x0A)+chr(0x05) +chr(0x0A)+chr(strDay)+chr(strHour)+chr(strMin)+'\n'
+            #strTime ='!'+chr(20)+chr(strYear)+chr(strMon)
+            print("return %s"%strTime)
+            self.transport.write(("%s"%strTime).encode())
+            #time.sleep(0.5)
+            #strTime = chr(strDay)+chr(strHour)+chr(strMin)
+            #print("return %s"%strTime)
+            #self.transport.write(("%s"%strTime).encode())
+            
         elif(str_data[0:4]=="DATA"):
             with open("db.txt",'w') as fw:
                 fw.write(str_data[4:])
             self.transport.write(('ACK').encode('utf-8'))
         else:
-            self.transport.write(("%s"%"\0").encode('utf-8'))
+            #self.transport.write(("%s"%"\0").encode('utf-8'))
+            self.transport.write((str_data).encode('utf-8'))
 
 def twistedServer():
     factory = protocol.Factory()
