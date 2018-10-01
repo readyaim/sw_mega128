@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+﻿# !/usr/bin/env python
 '''This is the test excecises for chapter 16 of CORE_PYTHON_PROGRAMMING
 Network Programming
 '''
@@ -12,7 +12,7 @@ from random import randint
 from queue import Queue
 import logging
 from socket import *
-
+import struct
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -108,33 +108,38 @@ class TSServProtocol(protocol.Protocol):
         logger.info("...connected from: %s", clnt)
     def dataReceived(self, data):
         #self.transport.write(("[%s] %s"%(ctime(), data.decode())).encode())
-        print(data.decode("utf-8"))
-        str_data = data.decode('utf-8')
-        if (str_data.strip()[0:6]=='r+Time'):
-            print("run here\n")
+        logger.debug("%s",data)
+#        str_data = data.decode('utf-8')
+        str_data = data
+#        str_data = struct.unpack('>c*',data)
+        if (str_data.strip()[0:6]==b'r+Time'):
+            #logger.debug("run here")
             strHandler = time.localtime(time.time())
+            
             strYear = strHandler.tm_year-2000
             strMon = strHandler.tm_mon
             strDay = (strHandler.tm_mday)
             strHour =(strHandler.tm_hour)
             strMin = (strHandler.tm_min)
             strTime ='!'+chr(20)+chr(strYear)+chr(strMon)+chr(strDay)+chr(strHour)+chr(strMin)
+            #strTime = '!'+datetime.fromtimestamp(time.time()).strftime("%Y%m%d%H%M")
             #strTime ='!'+chr(0x05)+chr(0x0a)+chr(0x05)+chr(0x0A)+chr(0x05)+chr(0x0A)+chr(0x05) +chr(0x0A)+chr(strDay)+chr(strHour)+chr(strMin)+'\n'
-            #strTime ='!'+chr(20)+chr(strYear)+chr(strMon)
-            print("return %s"%strTime)
-            self.transport.write(("%s"%strTime).encode())
-            #time.sleep(0.5)
-            #strTime = chr(strDay)+chr(strHour)+chr(strMin)
-            #print("return %s"%strTime)
-            #self.transport.write(("%s"%strTime).encode())
+            bTime= struct.pack('B'*7, 33,20, strHandler.tm_year-2000, strHandler.tm_mon, strHandler.tm_mday, strHandler.tm_hour, strHandler.tm_min)
             
-        elif(str_data[0:4]=="DATA"):
-            with open("db.txt",'w') as fw:
-                fw.write(str_data[4:])
-            self.transport.write(('ACK').encode('utf-8'))
+            #strTime ='!'+chr(20)+chr(strYear)+chr(strMon)
+            logger.debug("%s",bTime)
+            #self.transport.write(strTime.encode())
+            self.transport.write(bTime)
+            
+        elif(str_data.strip()[0:4]==b"DATA"):
+            len = str_data[4:6]
+            with open("db.txt",'ab') as fw:
+                fw.write(str_data[9:])
+                logger.debug("write db.txt")
+            self.transport.write(b'ACK')
         else:
             #self.transport.write(("%s"%"\0").encode('utf-8'))
-            self.transport.write((str_data).encode('utf-8'))
+            self.transport.write(str_data)
 
 def twistedServer():
     factory = protocol.Factory()

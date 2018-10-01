@@ -12,7 +12,7 @@ from random import randint
 from queue import Queue
 import logging
 from socket import *
-
+import struct
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -36,8 +36,8 @@ else:
 debug =True
 
 #HOST = '10.240.17.60'
-HOST = '123.206.115.17'
-#HOST = '192.168.1.102'
+#HOST = '123.206.115.17'
+HOST = '192.168.1.103'
 PORT = 21567
 ADDR = (HOST, PORT)
 BUFSIZ = 1024
@@ -113,16 +113,24 @@ class TSClntProtocol(protocol.Protocol):
     def sendData(self):
         data = input("> ")
         if data:
-            logger.info( '...sending %s...', data)
-            #print(data)
-            self.transport.write(data.encode())
+            if data.strip()[0:4] != 'DATA':
+                logger.info( '...sending %s...', data)
+                #print(data)
+                self.transport.write(data.encode())
+            else:
+                #'DATA'
+                binData = struct.pack('B'*16, ord('D'),ord('A'),ord('T'),ord('A'),0,16,0,1,
+                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255),
+                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255))
+                logger.info('...%s...', binData)
+                self.transport.write(binData)
         else:
             self.transport.loseConnection()
     def connectionMade(self):
         self.sendData()
     def dataReceived(self,data):
         dataList = list(map(ord, data.decode()))
-        
+        logger.debug("%s", data)
         logger.debug("%s", dataList)
         self.sendData()
     
@@ -139,6 +147,14 @@ def twistedClient():
 # test function here
 
 if __name__=='__main__':
+    strData = 'DATA****'
+    for i in range(256):
+        strData +=str(randint(1,256)) 
+    
+#    binData=struct.pack('B'*264, strData)
+    binData = struct.pack('B'*16, ord('D'),ord('A'),ord('T'),ord('A'),0,16,0,1,
+                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255),
+                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255))
     #main()
     #main_queue()
 #    tsTclinet()
