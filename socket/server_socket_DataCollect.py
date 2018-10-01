@@ -136,7 +136,7 @@ class TSServProtocol(protocol.Protocol):
             with open("db.txt",'ab') as fw:
                 fw.write(str_data[9:])
                 logger.debug("write db.txt")
-            self.transport.write(b'ACK')
+            self.transport.write(b'\0')
         else:
             #self.transport.write(("%s"%"\0").encode('utf-8'))
             self.transport.write(str_data)
