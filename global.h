@@ -175,6 +175,14 @@ typedef struct DataTimeSeries_t {
 }DataTimeSeries_t;
 extern struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 
+typedef struct IP_t {
+	UINT8 ip[4];
+}IP_t;
+typedef struct HostIP_t {
+	IP_t ipAddress;
+	UINT16 port;
+}HostIP_t;
+extern struct HostIP_t hostIP_g;
 /*
 TODO:
 //change the data type as below:

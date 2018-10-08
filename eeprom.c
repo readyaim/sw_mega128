@@ -19,6 +19,7 @@ extern void get_current_time(Date_t* pTime, UINT32* currentTickCout);
 volatile UINT16 addr_write_eeprom = START_ADDR_EEPROM;
 volatile UINT16 addr_read_eeprom = START_ADDR_EEPROM;
 
+#define IP_START_ADDR_EEPROM 0x08
 
 #ifdef _ICCV7_FOR_AVR
 
@@ -497,6 +498,36 @@ void write_tickCountTime_to_eeprom(void)
 	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter >> 16));
 	EEPROM_write(addr++, (UINT8)(timeStampShot_g.tickeCounter >> 24));
 	*/
+}
+
+/*******************************************************************************
+* Function:     write_IP_to_EEPROM()
+* Arguments:  hostIP_g
+					 TODO: use variable 
+* Return:
+* Description: write IP to NVM at address
+*******************************************************************************/
+void write_IP_to_EEPROM(void)
+{
+	UINT16 addr = IP_START_ADDR_EEPROM;
+	UINT8 data;
+	data = EEPROM_read(addr);
+	if (data == 0xff) {
+		EEPROM_write(addr++, hostIP_g.ipAddress.ip[0]);
+		EEPROM_write(addr++, hostIP_g.ipAddress.ip[1]);
+		EEPROM_write(addr++, hostIP_g.ipAddress.ip[2]);
+		EEPROM_write(addr++, hostIP_g.ipAddress.ip[3]);
+		EEPROM_write(addr++, (UINT8)hostIP_g.port);
+		EEPROM_write(addr++, (UINT8)(hostIP_g.port >> 8));
+		addr += 2;
+	}
+	else
+	{
+		addr += 8;
+	}
+	
+
+
 }
 
 #ifdef _TEST_CODE_INCLUDED

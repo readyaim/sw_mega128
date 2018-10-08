@@ -62,6 +62,7 @@ struct DataTimeSeries_t dataSample_g, dataSample_max_g, dataSample_min_g;
 struct Fifo CommandFifo;
 struct TimeStamp_t timeStampShot_g;
 struct Date_t uploadTime_g;
+struct HostIP_t hostIP_g;
 
 //struct TimeAddr_t tempTimeAddr; //humidityTimeAddr, windSpeedTimeAddr...
 
@@ -78,6 +79,7 @@ BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay)
 void init_vars(void)
 {
 	struct Date_t initTime = {20,18,9,14,23,11};
+	struct IP_t initIP = { 123,206,115,17 };
 
 
     SystemTickCount = 1;
@@ -124,6 +126,9 @@ void init_vars(void)
     CommandFifo.ClearFifo = ClearFifo;
     (*CommandFifo.ClearFifo)(&CommandFifo);
 
+	// set host ip and port
+	hostIP_g.ipAddress = initIP;
+	hostIP_g.port = 21567;
 	
 }
 
