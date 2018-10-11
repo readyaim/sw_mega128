@@ -3,7 +3,7 @@ LIB = ilibw
 CFLAGS =  -e -D__ICC_VERSION=722 -DATMega128  -l -A -A -g -MLongJump -MHasMul -MEnhanced -Wf-use_elpm -Wf-const_is_flash -DCONST="" 
 ASFLAGS = $(CFLAGS) 
 LFLAGS =  -g -e:0x20000 -ucrtatmega.o -bfunc_lit:0x8c.0x20000 -dram_end:0x10ff -bdata:0x100.0x10ff -dhwstk_size:60 -beeprom:0.4096 -fihx_coff -S2
-FILES = adc.o command.o fifo.o keys.o main.o peripherals.o timer.o twi.o uart.o spi.o usr_gprs232_7sr.o data_collection.o eeprom.o iostudio.o modem.o 
+FILES = adc.o command.o fifo.o keys.o main.o peripherals.o timer.o twi.o uart.o spi.o usr_gprs232_7sr.o data_collection.o eeprom.o iostudio.o modem.o oled.o 
 
 MEGA128:	$(FILES)
 	$(CC) -o MEGA128 $(LFLAGS) @MEGA128.lk   -llpatm128 -lcatm128
@@ -51,3 +51,6 @@ iostudio.o:	..\iostudio.s
 modem.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h
 modem.o:	..\modem.c
 	$(CC) -c $(CFLAGS) ..\modem.c
+oled.o: .\..\global.h D:\PROGRA~1\iccv7avr\include\stdio.h D:\PROGRA~1\iccv7avr\include\stdarg.h D:\PROGRA~1\iccv7avr\include\_const.h .\..\AVRdef_l.h .\..\iom128v_l.h D:\PROGRA~1\iccv7avr\include\string.h .\..\twi.h .\..\oledfont.h
+oled.o:	..\oled.c
+	$(CC) -c $(CFLAGS) ..\oled.c

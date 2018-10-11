@@ -141,11 +141,18 @@ class TSServProtocol(protocol.Protocol):
             #self.transport.write(("%s"%"\0").encode('utf-8'))
             self.transport.write(str_data)
 
+def getCMD():
+    while True:
+        a = input('>')
+        self.transport.write(a.encode())
+        print(a)
+
 def twistedServer():
     factory = protocol.Factory()
     factory.protocol = TSServProtocol
     logger.debug("waiting for connection...")
     reactor.listenTCP(PORT, factory)
+    reactor.callInThread(getCMD)
     reactor.run()
 # function definition here
 

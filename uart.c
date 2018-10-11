@@ -8,10 +8,10 @@
 * Author: s.z.
 ****************************************************************************/
 
-/*********************************°üº¬Í·ÎÄ¼ş********************************/
+/*********************************åŒ…å«å¤´æ–‡ä»¶********************************/
 #include "global.h"
 
-/***********************************ºê¶¨Òå**********************************/
+/***********************************å®å®šä¹‰**********************************/
 
 #define UART0_U2X 0
 #define UART0_BAUD 38400	 //UART0_BAUD rate 
@@ -24,8 +24,8 @@
 //#define UART1_UBRR (CPU_CLK/8/UART1_BAUD-1)		//U2X=1	
 //#define UART1_UBRR (CPU_CLK/16/UART1_BAUD-1)		//U2X=0
 
-#define RXC0_BUFF_SIZE 128   //½ÓÊÜ»º³åÇø×Ö½ÚÊı
-#define TXC0_BUFF_SIZE 128   //·¢ËÍ»º³åÇø×Ö½ÚÊı
+#define RXC0_BUFF_SIZE 128   //æ¥å—ç¼“å†²åŒºå­—èŠ‚æ•°
+#define TXC0_BUFF_SIZE 128   //å‘é€ç¼“å†²åŒºå­—èŠ‚æ•°
 
 extern void parseStr2Date(UINT8 *str, Date_t *pdateTime);
 extern void parseStr2Cmd(UINT8 ch);
@@ -33,21 +33,21 @@ extern BOOL AddFifo(struct Fifo *this, UINT8 data);
 
 
 // add static to forbiden other file to use
-static UINT8 RXC0_BUFF[RXC0_BUFF_SIZE];   //¶¨Òå½ÓÊÜ»º³åÇø
-static UINT8 TXC0_BUFF[TXC0_BUFF_SIZE];   //¶¨Òå·¢ËÍ»º³åÇø
-static UINT8 RXC0_RD;   //½ÓÊÜ»º³åÇø¶ÁÖ¸Õë
-static UINT8 RXC0_WR;   //½ÓÊÜ»º³åÇøĞ´Ö¸Õë
-static UINT8 TXC0_RD;   //·¢ËÍ»º³åÇø¶ÁÖ¸Õë
-static UINT8 TXC0_WR;   //·¢ËÍ»º³åÇøĞ´Ö¸Õë
+static UINT8 RXC0_BUFF[RXC0_BUFF_SIZE];   //å®šä¹‰æ¥å—ç¼“å†²åŒº
+static UINT8 TXC0_BUFF[TXC0_BUFF_SIZE];   //å®šä¹‰å‘é€ç¼“å†²åŒº
+static UINT8 RXC0_RD;   //æ¥å—ç¼“å†²åŒºè¯»æŒ‡é’ˆ
+static UINT8 RXC0_WR;   //æ¥å—ç¼“å†²åŒºå†™æŒ‡é’ˆ
+static UINT8 TXC0_RD;   //å‘é€ç¼“å†²åŒºè¯»æŒ‡é’ˆ
+static UINT8 TXC0_WR;   //å‘é€ç¼“å†²åŒºå†™æŒ‡é’ˆ
 
 
 // add static to forbiden other file to use
-static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //¶¨Òå½ÓÊÜ»º³åÇø
-UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //¶¨Òå·¢ËÍ»º³åÇø
-static UINT8 RXC1_RD;   //½ÓÊÜ»º³åÇø¶ÁÖ¸Õë
-static UINT8 RXC1_WR;   //½ÓÊÜ»º³åÇøĞ´Ö¸Õë
-volatile UINT16 TXC1_RD;   //·¢ËÍ»º³åÇø¶ÁÖ¸Õë
-volatile UINT16 TXC1_WR;   //·¢ËÍ»º³åÇøĞ´Ö¸Õë
+static UINT8 RXC1_BUFF[RXC1_BUFF_SIZE];   //å®šä¹‰æ¥å—ç¼“å†²åŒº
+UINT8 UART1_TxBuf[UART1_TX_BUFFER_SIZE];   //å®šä¹‰å‘é€ç¼“å†²åŒº
+static UINT8 RXC1_RD;   //æ¥å—ç¼“å†²åŒºè¯»æŒ‡é’ˆ
+static UINT8 RXC1_WR;   //æ¥å—ç¼“å†²åŒºå†™æŒ‡é’ˆ
+volatile UINT16 TXC1_RD;   //å‘é€ç¼“å†²åŒºè¯»æŒ‡é’ˆ
+volatile UINT16 TXC1_WR;   //å‘é€ç¼“å†²åŒºå†™æŒ‡é’ˆ
 
 volatile UINT16 UART1_TxHead;
 volatile UINT16 UART1_TxTail;
@@ -55,14 +55,14 @@ volatile UINT16 UART1_TxTail;
 
 
 /****************************************************************************
-Function Name: uart0³õÊ¼»¯³ÌĞò
+Function Name: uart0åˆå§‹åŒ–ç¨‹åº
 Arguments:
 Returns: :
 ****************************************************************************/
-void uart0_init_register(void)  //³õÊ¼»¯COM0
+void uart0_init_register(void)  //åˆå§‹åŒ–COM0
 {
 	UINT16 ubrr = UART0_UBRR;
-	UCSR0B = 0x00; //³õÊ¼»¯
+	UCSR0B = 0x00; //åˆå§‹åŒ–
 	UCSR0A = 0x00 | (UART0_U2X << U2X0); //uart0 init, U2X0=0, 1x speed mode.
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);//8bit
 	Clr_Bit(UCSR0C, USBS0);        //USBS0=0: 1bit stop
@@ -79,36 +79,36 @@ void uart0_init_register(void)  //³õÊ¼»¯COM0
 #endif // _ATMEGA128A
 
 
-	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); //½ÓÊÕÊ¹ÄÜ£¬·¢ÉäÊ¹ÄÜ£¬½ÓÊÕ½áÊøÖĞ¶ÏÊ¹ÄÜ
+	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0); //æ¥æ”¶ä½¿èƒ½ï¼Œå‘å°„ä½¿èƒ½ï¼Œæ¥æ”¶ç»“æŸä¸­æ–­ä½¿èƒ½
 }
 
 /****************************************************************************
-Function Name: uart0·¢ËÍµ¥×Ö½ÚÊı¾İ
+Function Name: uart0å‘é€å•å­—èŠ‚æ•°æ®
 Arguments: c
 Returns: :
 ****************************************************************************/
 int uart0_putchar(char ch)
 {
 	TXC0_BUFF[TXC0_WR] = ch;
-	if (TXC0_WR < (TXC0_BUFF_SIZE - 1))   //TXC0_BUFF_SIZE  ·¢ËÍÇøÊı¾İ´óĞ¡
+	if (TXC0_WR < (TXC0_BUFF_SIZE - 1))   //TXC0_BUFF_SIZE  å‘é€åŒºæ•°æ®å¤§å°
 		TXC0_WR++;
 	else
 		TXC0_WR = 0;
-	//UCSR0B |= (1 << UDRIE0);          //¿ªÆôUDREÖĞ¶Ï
-	Set_Bit(UCSR0B, UDRIE0);          //¿ªÆôUDREÖĞ¶Ï
+	//UCSR0B |= (1 << UDRIE0);          //å¼€å¯UDREä¸­æ–­
+	Set_Bit(UCSR0B, UDRIE0);          //å¼€å¯UDREä¸­æ–­
 	return 0;
 }
 
 /****************************************************************************
-Function Name: uart0½ÓÊÕµ¥×Ö½ÚÊı¾İ
+Function Name: uart0æ¥æ”¶å•å­—èŠ‚æ•°æ®
 Arguments:
 Returns: :
 ****************************************************************************/
 UINT8 uart0_getchar(void)
 {
 	unsigned temp;
-	while (RXC0_RD == RXC0_WR)   //µÈ´ı»º³åÇøÄÚÓĞÊı¾İÊäÈë
-		;                   //ËÀÑ­»·£¬µÈ´ıÊäÈëÊı¾İ
+	while (RXC0_RD == RXC0_WR)   //ç­‰å¾…ç¼“å†²åŒºå†…æœ‰æ•°æ®è¾“å…¥
+		;                   //æ­»å¾ªç¯ï¼Œç­‰å¾…è¾“å…¥æ•°æ®
 	temp = RXC0_BUFF[RXC0_RD];
 	if (RXC0_RD < (RXC0_BUFF_SIZE - 1))
 		RXC0_RD++;
@@ -118,11 +118,11 @@ UINT8 uart0_getchar(void)
 }
 
 /****************************************************************************
-Function Name: uart0·¢ËÍ×Ö·û´®Êı¾İ
+Function Name: uart0å‘é€å­—ç¬¦ä¸²æ•°æ®
 Arguments: *s
 Returns:
 ****************************************************************************/
-void uart0_puts(char *s)     //·¢ËÍ×Ö·û´®º¯Êı
+void uart0_puts(char *s)     //å‘é€å­—ç¬¦ä¸²å‡½æ•°
 {
 	while (*s)
 	{
@@ -133,13 +133,13 @@ void uart0_puts(char *s)     //·¢ËÍ×Ö·û´®º¯Êı
 	uart0_putchar(0x0A);  //LF Line forward, for win+linux}
 }
 /****************************************************************************
-Function Name: ³õÊ¼»¯µ¥Æ¬»ú
+Function Name: åˆå§‹åŒ–å•ç‰‡æœº
 Arguments:
 Returns: :
 ****************************************************************************/
 void uart0_init_devices(void)
 {
-	CLI(); //¹Ø±ÕËùÓĞÖĞ¶Ï
+	CLI(); //å…³é—­æ‰€æœ‰ä¸­æ–­
 	XDIV = 0x00;
 	XMCRA = 0x00;
 #ifndef _ATMEGA128A
@@ -184,7 +184,7 @@ void uart0_udre_isr(void)
 		TXC0_RD++;
 	else
 		TXC0_RD = 0;
-	if (TXC0_RD == TXC0_WR)   //¶ÁÖ¸Õë==Ğ´Ö¸Õë,Í£Ö¹ÖĞ¶Ï
+	if (TXC0_RD == TXC0_WR)   //è¯»æŒ‡é’ˆ==å†™æŒ‡é’ˆ,åœæ­¢ä¸­æ–­
 	{
 		//UCSR0B &= ~(1 << UDRIE0);
 		Clr_Bit(UCSR0B, UDRIE0);    //DISABLE interrupt, no Tx data to send when TXC0_RD == TXC0_WR
@@ -217,7 +217,7 @@ void uart0_loopback(void)
 	//Set_Bit(UCSR0B, RXEN0); //Enable TC0 Rx
 }
 /****************************************************************************
-Function Name: Ö÷³ÌĞò
+Function Name: ä¸»ç¨‹åº
 Arguments:
 Returns:
 Descriptions:
@@ -231,12 +231,12 @@ void main_uart0(void)
 	RXC0_WR = 0;
 	uart0_init_devices();
 	uart0_init_register();
-	SEI();  //ÔÊĞíÖĞ¶Ï
+	SEI();  //å…è®¸ä¸­æ–­
 	uart0_putchar('t');
 	while (1)
 	{
 		delay_ms(1000);
-		//if (uart0_getchar() == 't')//°´¼üÅÌt¼ü¿ªÊ¼²âÊÔ
+		//if (uart0_getchar() == 't')//æŒ‰é”®ç›˜té”®å¼€å§‹æµ‹è¯•
 		//{ 
 		//    uart0_puts("test ok!");
 		//    //for (i = 0; i < 10; i++) uart0_putchar(0x30 + i);
@@ -263,7 +263,7 @@ void init_uart0(void)
 	RXC0_WR = 0;
 	uart0_init_devices();
 	uart0_init_register();
-	SEI();  //ÔÊĞíÖĞ¶Ï
+	SEI();  //å…è®¸ä¸­æ–­
 
 }
 /*******************************************************************************
@@ -293,12 +293,12 @@ int putchar(char ch)
 	//UDR0 = ch;
 	//return 0;
 	TXC0_BUFF[TXC0_WR] = ch;
-	if (TXC0_WR < (TXC0_BUFF_SIZE - 1))   //TXC0_BUFF_SIZE  ·¢ËÍÇøÊı¾İ´óĞ¡
+	if (TXC0_WR < (TXC0_BUFF_SIZE - 1))   //TXC0_BUFF_SIZE  å‘é€åŒºæ•°æ®å¤§å°
 		TXC0_WR++;
 	else
 		TXC0_WR = 0;
-	//UCSR0B |= (1 << UDRIE0);          //¿ªÆôUDREÖĞ¶Ï
-	Set_Bit(UCSR0B, UDRIE0);          //¿ªÆôUDREÖĞ¶Ï
+	//UCSR0B |= (1 << UDRIE0);          //å¼€å¯UDREä¸­æ–­
+	Set_Bit(UCSR0B, UDRIE0);          //å¼€å¯UDREä¸­æ–­
 	return 0;
 }
 #else
@@ -347,32 +347,32 @@ UINT8 uart0_getcharBackup(void)
 
 
 /****************************************************************************
-Function Name: uart1·¢ËÍµ¥×Ö½ÚÊı¾İ
+Function Name: uart1å‘é€å•å­—èŠ‚æ•°æ®
 Arguments: ch
 Returns: :
 ****************************************************************************/
 int uart1_putchar(char ch)
 {
 	UART1_TxBuf[TXC1_WR] = ch;
-	if (TXC1_WR < (UART1_TX_BUFFER_SIZE - 1))   //UART1_TX_BUFFER_SIZE  ·¢ËÍÇøÊı¾İ´óĞ¡
+	if (TXC1_WR < (UART1_TX_BUFFER_SIZE - 1))   //UART1_TX_BUFFER_SIZE  å‘é€åŒºæ•°æ®å¤§å°
 		TXC1_WR++;
 	else
 		TXC1_WR = 0;
-	//UCSR1B |= (1 << UDRIE1);          //¿ªÆôUDREÖĞ¶Ï
-	Set_Bit(UCSR1B, UDRIE1);          //¿ªÆôUDREÖĞ¶Ï
+	//UCSR1B |= (1 << UDRIE1);          //å¼€å¯UDREä¸­æ–­
+	Set_Bit(UCSR1B, UDRIE1);          //å¼€å¯UDREä¸­æ–­
 	return 0;
 }
 
 /****************************************************************************
-Function Name: uart1½ÓÊÕµ¥×Ö½ÚÊı¾İ
+Function Name: uart1æ¥æ”¶å•å­—èŠ‚æ•°æ®
 Arguments:
 Returns: :
 ****************************************************************************/
 UINT8 uart1_getchar(void)
 {
 	UINT8 temp;
-	while (RXC1_RD == RXC1_WR)   //µÈ´ı»º³åÇøÄÚÓĞÊı¾İÊäÈë
-		;                   //ËÀÑ­»·£¬µÈ´ıÊäÈëÊı¾İ
+	while (RXC1_RD == RXC1_WR)   //ç­‰å¾…ç¼“å†²åŒºå†…æœ‰æ•°æ®è¾“å…¥
+		;                   //æ­»å¾ªç¯ï¼Œç­‰å¾…è¾“å…¥æ•°æ®
 	temp = RXC1_BUFF[RXC1_RD];
 	if (RXC1_RD < (RXC1_BUFF_SIZE - 1))
 		RXC1_RD++;
@@ -382,11 +382,11 @@ UINT8 uart1_getchar(void)
 }
 
 /****************************************************************************
-Function Name: uart1·¢ËÍ×Ö·û´®Êı¾İ
+Function Name: uart1å‘é€å­—ç¬¦ä¸²æ•°æ®
 Arguments: *s
 Returns:
 ****************************************************************************/
-void uart1_puts(char *s)     //·¢ËÍ×Ö·û´®º¯Êı
+void uart1_puts(char *s)     //å‘é€å­—ç¬¦ä¸²å‡½æ•°
 {
 	while (*s)
 	{
@@ -438,13 +438,13 @@ void uart1_checkCMDPolling(void)
 }
 
 /****************************************************************************
-Function Name: ³õÊ¼»¯µ¥Æ¬»ú
+Function Name: åˆå§‹åŒ–å•ç‰‡æœº
 Arguments:
 Returns: :
 ****************************************************************************/
 void uart1_init_devices(void)
 {
-	CLI(); //¹Ø±ÕËùÓĞÖĞ¶Ï
+	CLI(); //å…³é—­æ‰€æœ‰ä¸­æ–­
 	XDIV = 0x00;
 	XMCRA = 0x00;
 #ifndef _ATMEGA128A
@@ -505,7 +505,7 @@ void uart1_udre_isr(void)
 		TXC1_RD++;
 	else
 		TXC1_RD = 0;
-	if (TXC1_RD == TXC1_WR)   //¶ÁÖ¸Õë==Ğ´Ö¸Õë,Í£Ö¹ÖĞ¶Ï
+	if (TXC1_RD == TXC1_WR)   //è¯»æŒ‡é’ˆ==å†™æŒ‡é’ˆ,åœæ­¢ä¸­æ–­
 	{
 		//UCSR1B &= ~(1 << UDRIE1);
 		Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
@@ -557,15 +557,15 @@ int uart1_putcharPolling(char ch)
 
 
 /****************************************************************************
-Function Name: uart1³õÊ¼»¯³ÌĞò
+Function Name: uart1åˆå§‹åŒ–ç¨‹åº
 Arguments:
 Returns: :
 ****************************************************************************/
-void uart1_init_register(void)  //³õÊ¼»¯COM0
+void uart1_init_register(void)  //åˆå§‹åŒ–COM0
 {
 	UINT16 ubrr = UART1_UBRR;
 	printf("ubrr = %d\r\n", ubrr);
-	UCSR1B = 0x00; //³õÊ¼»¯
+	UCSR1B = 0x00; //åˆå§‹åŒ–
 	UCSR1A = 0x00| (UART1_U2X<<U2X1); //uart1 initialization,  *U2X1=1, 2x speeds mode
 	UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);//8bit
 	Clr_Bit(UCSR1C, USBS1);        //USBS0=0: 1bit stop
@@ -587,7 +587,7 @@ void uart1_init_register(void)  //³õÊ¼»¯COM0
 * Return:
 * Description: disable UART1 interrupt
 *******************************************************************************/
-void uart1_DisableInterrupt(void)  //³õÊ¼»¯COM0
+void uart1_DisableInterrupt(void)  //åˆå§‹åŒ–COM0
 {
 	Clr_Bit(UCSR1B, RXCIE1);
 	Clr_Bit(UCSR1B, UDRIE1);    //DISABLE interrupt, no Tx data to send when TXC1_RD == TXC1_WR
@@ -689,12 +689,12 @@ void main_uart1_loopback(void)
 {
 	//unsigned int i;
 	uart1_init();
-	SEI();  //ÔÊĞíÖĞ¶Ï
+	SEI();  //å…è®¸ä¸­æ–­
 	uart1_putchar('t');
 	while (1)
 	{
 		delay_ms(1000);
-		//if (uart1_getchar() == 't')//°´¼üÅÌt¼ü¿ªÊ¼²âÊÔ
+		//if (uart1_getchar() == 't')//æŒ‰é”®ç›˜té”®å¼€å§‹æµ‹è¯•
 		//{ 
 		//    uart1_puts("test ok!");
 		//    //for (i = 0; i < 10; i++) uart1_putchar(0x30 + i);

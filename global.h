@@ -120,7 +120,7 @@ extern UINT8 transInterval_g;
 #define _DUMMY_CODE
 
 extern BOOL TimeIsUp(UINT32 StartTime, UINT32 Delay);
-extern void Delay(UINT32);
+//extern void Delay(UINT32);
 extern struct Fifo CommandFifo;
 extern UINT32 SystemTickCount;
 

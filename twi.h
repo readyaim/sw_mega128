@@ -170,6 +170,8 @@ void IIC_TWI_WriteToDevice(UINT8 DeviceAddr,UINT8 *pData,UINT8 DataLength);
 void IIC_TWI_WriteToDeviceByAddr(UINT8 DeviceAddr,UINT8 DataAddr ,UINT8 *pData,UINT8 DataLength);
 void IIC_TWI_ReadFromDevice(UINT8 DeviceAddr,UINT8 *pData,UINT8 DataLength);
 void IIC_TWI_ReadFromDeviceByAddr(UINT8 DeviceAddr,UINT8 DataAddr ,UINT8 *pData,UINT8 DataLength);
+
+
 #endif /* TWI_H_ */
 
 
