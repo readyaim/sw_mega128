@@ -59,16 +59,16 @@ extern void delay_ms(UINT16 millisecond);
 
 /*
 @brief			延迟1us
-static void delay(unsigned char num)
+static void delay(UINT8 num)
 {
     while (num--);
 }
 
 
 
-static void delay_ms(unsigned int ms)//延迟函数，MS级别
+static void delay_ms(UINT16 ms)//延迟函数，MS级别
 {
-    unsigned int x, y;
+    UINT16 x, y;
     for (x = ms; x > 0; x--)
     {
         for (y = 1300; y > 0; y--);
@@ -121,9 +121,9 @@ static void OLED_IIC_Stop(void)
 @param			无
 @retval			无
 */
-static unsigned char IIC_Wait_Ack(void)
+static UINT8 IIC_Wait_Ack(void)
 {
-    unsigned char ack;
+    UINT8 ack;
 
     OLED_SCLK_Clr();	//时钟线置低
     delay_us(1);	//延迟1us
@@ -149,7 +149,7 @@ static unsigned char IIC_Wait_Ack(void)
 @param			无
 @retval			无
 */
-// static void IIC_Send_Ack(unsigned char ack)
+// static void IIC_Send_Ack(UINT8 ack)
 // {
 // 	OLED_SCLK_Clr();	//时钟线置低
 // 	delay_us(1);	//延迟1us
@@ -172,9 +172,9 @@ static unsigned char IIC_Wait_Ack(void)
 @param			IIC_Byte：写入的字节
 @retval			无
 */
-static void Write_IIC_Byte(unsigned char IIC_Byte)
+static void Write_IIC_Byte(UINT8 IIC_Byte)
 {
-    unsigned char i;  //定义变量
+    UINT8 i;  //定义变量
     for (i = 0; i < 8; i++) //for循环8次
     {
         OLED_SCLK_Clr();	//时钟线置低，为传输数据做准备
@@ -206,10 +206,10 @@ static void Write_IIC_Byte(unsigned char IIC_Byte)
 @param			ack：应答/不应答
 @retval			无
 */
-// static unsigned char Read_IIC_Byte(unsigned char ack)
+// static UINT8 Read_IIC_Byte(UINT8 ack)
 // {
-// 	unsigned char data = 0;  //定义变量
-// 	unsigned char i;  //定义变量
+// 	UINT8 data = 0;  //定义变量
+// 	UINT8 i;  //定义变量
 
 // 	OLED_SCLK_Clr();	//时钟线置低，为传输数据做准备
 // 	delay_us(1);	//延迟1us
@@ -242,7 +242,7 @@ static void Write_IIC_Byte(unsigned char IIC_Byte)
 @param			IIC_Command：写入的命令
 @retval			无
 */
-static void Write_IIC_Command(unsigned char IIC_Command)
+static void Write_IIC_Command(UINT8 IIC_Command)
 {
     OLED_IIC_Start();
     Write_IIC_Byte(0x78);//写入从机地址，SD0 = 0
@@ -257,7 +257,7 @@ static void Write_IIC_Command(unsigned char IIC_Command)
 @param			IIC_Data：数据
 @retval			无
 */
-static void Write_IIC_Data(unsigned char IIC_Data)
+static void Write_IIC_Data(UINT8 IIC_Data)
 {
     OLED_IIC_Start();
     Write_IIC_Byte(0x78);	//写入从机地址，SD0 = 0
@@ -273,7 +273,7 @@ static void Write_IIC_Data(unsigned char IIC_Data)
 cmd：1，写诶数据；0，写入命令
 @retval			无
 */
-void OLED_WR_Byte(unsigned char dat, unsigned char cmd)
+void OLED_WR_Byte(UINT8 dat, UINT8 cmd)
 {
     if (cmd)
     {
@@ -292,7 +292,7 @@ void OLED_WR_Byte(unsigned char dat, unsigned char cmd)
 y：起始页地址 0~7
 @retval			无
 */
-void OLED_Set_Pos(unsigned char x, unsigned char y)
+void OLED_Set_Pos(UINT8 x, UINT8 y)
 {
     OLED_WR_Byte(0xb0 + y, OLED_CMD);//写入页地址
     OLED_WR_Byte((x & 0x0f), OLED_CMD);  //写入列的地址  低半字节
@@ -333,7 +333,7 @@ void OLED_Display_Off(void)
 */
 void OLED_Clear(void)
 {
-    unsigned char i, n;		    //定义变量
+    UINT8 i, n;		    //定义变量
     for (i = 0; i < 8; i++)
     {
         OLED_WR_Byte(0xb0 + i, OLED_CMD);    //从0~7页依次写入
@@ -351,9 +351,9 @@ y：起始页，SIZE = 16占两页；SIZE = 12占1页
 chr：字符
 @retval			无
 */
-void OLED_ShowChar(unsigned char x, unsigned char y, unsigned char chr)
+void OLED_ShowChar(UINT8 x, UINT8 y, UINT8 chr)
 {
-    unsigned char c = 0, i = 0;
+    UINT8 c = 0, i = 0;
     c = chr - ' '; //获取字符的偏移量	
     if (x > Max_Column - 1) { x = 0; y = y + 2; } //如果列数超出了范围，就从下2页的第0列开始
 
@@ -381,9 +381,9 @@ void OLED_ShowChar(unsigned char x, unsigned char y, unsigned char chr)
 n：输入数的次方
 @retval			result：一个数的n次方
 */
-unsigned int oled_pow(unsigned char m, unsigned char n)
+UINT16 oled_pow(UINT8 m, UINT8 n)
 {
-    unsigned int result = 1;
+    UINT16 result = 1;
     while (n--)result *= m;
     return result;
 }
@@ -398,10 +398,10 @@ len：数字的长度
 size：显示数字的大小
 @retval			无
 */
-void OLED_ShowNum(unsigned char x, unsigned char y, unsigned int num, unsigned char len, unsigned char size)
+void OLED_ShowNum(UINT8 x, UINT8 y, UINT16 num, UINT8 len, UINT8 size)
 {
-    unsigned char t, temp;  //定义变量
-    unsigned char enshow = 0;		//定义变量
+    UINT8 t, temp;  //定义变量
+    UINT8 enshow = 0;		//定义变量
 
     for (t = 0; t < len; t++)
     {
@@ -427,9 +427,9 @@ y：起始页
 *chr：第一个字符首地址
 @retval			无
 */
-void OLED_ShowString(unsigned char x, unsigned char y, unsigned char *chr)
+void OLED_ShowString(UINT8 x, UINT8 y, UINT8 *chr)
 {
-    unsigned char j = 0; //定义变量
+    UINT8 j = 0; //定义变量
 
     while (chr[j] != '\0') //如果不是最后一个字符
     {
@@ -448,9 +448,9 @@ y：起始页；一个字体占两页
 no：字体的序号
 @retval			无
 */
-void OLED_ShowCHinese(unsigned char x, unsigned char y, unsigned char no)
+void OLED_ShowCHinese(UINT8 x, UINT8 y, UINT8 no)
 {
-    unsigned char t, adder = 0; //定义变量
+    UINT8 t, adder = 0; //定义变量
 
     OLED_Set_Pos(x, y);	//从 x y 开始画点，先画第一页
     for (t = 0; t < 16; t++) //循环16次，画第一页的16列
@@ -474,10 +474,10 @@ y1：终止页地址
 BMP[]：存放图片代码的数组
 @retval			无
 */
-void OLED_DrawBMP(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, unsigned char BMP[])
+void OLED_DrawBMP(UINT8 x0, UINT8 y0, UINT8 x1, UINT8 y1, UINT8 BMP[])
 {
-    unsigned int j = 0; //定义变量
-    unsigned char x, y; //定义变量
+    UINT16 j = 0; //定义变量
+    UINT8 x, y; //定义变量
 
     if (y1 % 8 == 0) y = y1 / 8;   //判断终止页是否为8的整数倍
     else y = y1 / 8 + 1;

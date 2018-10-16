@@ -37,7 +37,8 @@ debug =True
 
 #HOST = '10.240.17.60'
 #HOST = '123.206.115.17'
-HOST = '192.168.1.102'
+#HOST = '192.168.1.103'
+HOST= 'localhost'
 PORT = 21567
 ADDR = (HOST, PORT)
 BUFSIZ = 1024
@@ -119,9 +120,14 @@ class TSClntProtocol(protocol.Protocol):
                 self.transport.write(data.encode())
             else:
                 #'DATA'
-                binData = struct.pack('B'*16, ord('D'),ord('A'),ord('T'),ord('A'),0,16,0,1,
-                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255),
-                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255))
+                dataBytes = []
+                boardID=randint(1,3)
+                for i in range(248):
+                    dataBytes.append(randint(1,255))
+                binData = struct.pack('>4B2H248B', ord('D'),ord('A'),ord('T'),ord('A'),len(dataBytes)+2,boardID,*dataBytes)
+#                binData = struct.pack('B'*16, ord('D'),ord('A'),ord('T'),ord('A'),0,16,0,1,
+#                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255),
+#                                   randint(1,255), randint(1,255), randint(1,255), randint(1,255))
                 logger.info('...%s...', binData)
                 self.transport.write(binData)
         else:

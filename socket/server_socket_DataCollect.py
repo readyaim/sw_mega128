@@ -103,8 +103,11 @@ from time import ctime
 
 # Class definition here
 class TSServProtocol(protocol.Protocol):
+    def __init__(self, factory):
+        self.factory = factory
     def connectionMade(self):
-        clnt = self.clnt = self.transport.getPeer().host
+        clnt = self.clnt = self.transport.getPeer()
+        self.factory.users[1] = self
         logger.info("...connected from: %s", clnt)
     def dataReceived(self, data):
         #self.transport.write(("[%s] %s"%(ctime(), data.decode())).encode())
@@ -132,28 +135,65 @@ class TSServProtocol(protocol.Protocol):
             self.transport.write(bTime)
             
         elif(str_data.strip()[0:4]==b"DATA"):
-            len = str_data[4:6]
-            with open("db.txt",'ab') as fw:
-                fw.write(str_data[9:])
-                logger.debug("write db.txt")
+            boardID = (int(str_data[6])<<8) + int(str_data[7])
+            length = str_data[4:6]
+#            print(length, ' ', str_data[6:8])
+#            print(str_data[7])
+            print(boardID)
+            filename = 'db'+('%5s'%str(boardID)).replace(' ','0')+'.bin'
+            print(filename)
+            with open(filename,'ab') as fw:
+#                fw.write(str_data[9:])
+                fw.write(str_data[0:])
+                logger.debug("write %s",filename)
             self.transport.write(b'\0')
         else:
             #self.transport.write(("%s"%"\0").encode('utf-8'))
             self.transport.write(str_data)
+    
+class ServerFactory(protocol.Factory):
+    def __init__(self):
+        self.users = {}
+        pass
 
-def getCMD():
-    while True:
-        a = input('>')
-        self.transport.write(a.encode())
-        print(a)
-
+    def buildProtocol(self, addr):
+        #return Chat(self.users)     #Chat()
+        return TSServProtocol(self)     #Chat(ChatFactory)
+    
+    def getCMD(self, *args):
+        while True:
+            cmd = input('>')
+            print(cmd)
+            self.users[1].transport.write(cmd.encode())
+    def check_users_online(self):
+        """
+        隔一段时间，服务器整体轮询一次，如果发现某一个客户端很长时间没有接受到心跳包，就判定它为断线，这时候主动切断这个客户端
+        """
+        for key, value in self.users.items():
+            if value.last_heartbeat_time != 0 and int(time.time()) - value.last_heartbeat_time > 4:
+                log.msg("[%s]没有检测到心跳包,主动切断" % key.encode('utf-8'))
+                value.transport.abortConnection()
+            else:
+#                log.msg("[ %s] heart beating" % (key))
+                pass
 def twistedServer():
     factory = protocol.Factory()
     factory.protocol = TSServProtocol
     logger.debug("waiting for connection...")
     reactor.listenTCP(PORT, factory)
-    reactor.callInThread(getCMD)
     reactor.run()
+
+
+
+def test1_twistedServer():
+    sf = ServerFactory()
+    reactor.callInThread(sf.getCMD,0,0)
+    logger.debug("waiting for connection...")
+    reactor.listenTCP(21567, sf)
+    
+    reactor.run()
+
+
 # function definition here
 
 # test function here
@@ -164,5 +204,6 @@ if __name__=='__main__':
 #    tsTserv()
     #tsUserv()
 #    tsTservSS()
-      twistedServer()
+#      twistedServer()
+      test1_twistedServer()
    
