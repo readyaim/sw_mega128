@@ -115,11 +115,11 @@ UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata);
 
 
 //IICπ‹Ω≈∂®“Â;
-#define SDA_Pin PD1
-#define SCL_Pin PD0
-#define TWI_PORT PORTD
-#define TWI_PORT_DDR DDRD
-#define TWI_PORT_IN PIND
+#define SDA_Pin PC1
+#define SCL_Pin PC0
+#define TWI_PORT PORTC
+#define TWI_PORT_DDR DDRC
+#define TWI_PORT_IN PINC
 
 #define SDA_OUT TWI_PORT_DDR|=(1<<SDA_Pin)
 #define SDA_IN TWI_PORT_DDR&=~(1<<SDA_Pin)

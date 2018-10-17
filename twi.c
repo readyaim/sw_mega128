@@ -556,6 +556,8 @@ void IIC_Init(void)
     //output high
     SDA_HIGH;
     SCL_HIGH;
+    Clr_Bit(SFIOR, PUD);
+    
 }
 
 

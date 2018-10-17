@@ -43,6 +43,7 @@ extern void init_uart0(void);
 extern void uart1_init(void);
 extern void test_timer1(void);
 extern void test_EEPROM(void);
+extern void test_OLED(void);
 extern  void test_get_address(void);
 extern void requestTimeFromServer(void);
 
@@ -166,8 +167,8 @@ void main(void)
 	//test_copystr2TimeStamp();
 	//test_get_address();
 	//test_EEPROMwriteSpeed();
-	
-	ticker_processCmd();
+    test_OLED();
+	//ticker_processCmd();
 	
 	
 

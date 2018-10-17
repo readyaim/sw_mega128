@@ -18,8 +18,7 @@
 #define     OLED_SCLK_Clr()			SCL_LOW	//PD0（SCL）输出低
 #define	    OLED_SDIN_Set()			SDA_HIGH	//PD1（SDA）输出高
 #define	    OLED_SDIN_Clr()			SDA_LOW	//PD1（SDA）输出高
-#define 	    OLED_READ_SDIN()		SDA_Read		//读取PB4（SDA）电平
-
+//#define 	    OLED_READ_SDIN()		SDA_IN;delay_us(IIC_DELAY_TIME);SDA_Read;delay_us(IIC_DELAY_TIME);SDA_OUT		//读取PB4（SDA）电平
 
 #define OLED_CMD  0	//写命令
 #define OLED_DATA 1	//写数据
@@ -113,6 +112,17 @@ static void OLED_IIC_Stop(void)
     delay_us(1);	//延迟1us
     OLED_SDIN_Set();	//信号线置高
     delay_us(1);	//延迟1us
+}
+
+UINT8 OLED_READ_SDIN(void)
+{
+    UINT8 ack;
+    SDA_IN; 
+    delay_us(IIC_DELAY_TIME); 
+    ack = TWI_PORT_IN & (1 << SDA_Pin); 
+    delay_us(IIC_DELAY_TIME); 
+    SDA_OUT;		//读取（SDA）电平
+    return ack;
 }
 
 
@@ -502,7 +512,7 @@ void OLED_Init(void)
 {
     IIC_Init();	//GPIO口初始化
 
-    delay_ms(200);	//延迟，由于单片机上电初始化比OLED快，所以必须加上延迟，等待OLED上复位完成
+    delay_ms(2000);	//延迟，由于单片机上电初始化比OLED快，所以必须加上延迟，等待OLED上复位完成
 
     OLED_WR_Byte(0xAE, OLED_CMD);	//关闭显示
 
@@ -575,7 +585,7 @@ void test_OLED(void)
 {
 
     OLED_Init();  //OLED初始化
-
+  
     OLED_ShowString(30, 2, "OLED TEST");//OLED显示  OLED TEST
     OLED_ShowCHinese(16, 0, 0);//OLED显示  技
     OLED_ShowCHinese(32, 0, 1);//OLED显示  新
