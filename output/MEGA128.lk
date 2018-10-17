@@ -1,0 +1,1 @@
+adc.o command.o fifo.o keys.o main.o peripherals.o timer.o twi.o uart.o spi.o usr_gprs232_7sr.o data_collection.o eeprom.o iostudio.o modem.o oled.o 

@@ -8,6 +8,7 @@
 !*.bat
 !*.py
 !MEGA128.mak
+!MEGA128.lk
 !git_readme.txt
 #exclude folders
 /example/
