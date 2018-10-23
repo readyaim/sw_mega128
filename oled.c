@@ -122,7 +122,10 @@ UINT8 OLED_READ_SDIN(void)
     ack = TWI_PORT_IN & (1 << SDA_Pin); 
     delay_us(IIC_DELAY_TIME); 
     SDA_OUT;		//读取（SDA）电平
-    return ack;
+    //printf("ack is %d", ack);
+    //return ack;
+    //TODO: why ACK is not received?
+    return 0;   //Mandatory ack back
 }
 
 
@@ -205,7 +208,7 @@ static void Write_IIC_Byte(UINT8 IIC_Byte)
     }
     OLED_SCLK_Clr();	//时钟线置低
     delay_us(1);	//延迟1us
-
+    printf("wait for ack");
     while (IIC_Wait_Ack());	//从机应答
 }
 
@@ -512,10 +515,10 @@ void OLED_Init(void)
 {
     IIC_Init();	//GPIO口初始化
 
-    delay_ms(2000);	//延迟，由于单片机上电初始化比OLED快，所以必须加上延迟，等待OLED上复位完成
-
+    delay_ms(200);	//延迟，由于单片机上电初始化比OLED快，所以必须加上延迟，等待OLED上复位完成
+    printf("1 byte\n");
     OLED_WR_Byte(0xAE, OLED_CMD);	//关闭显示
-
+    printf("2 byte\n");
     OLED_WR_Byte(0x00, OLED_CMD);	//设置低列地址
     OLED_WR_Byte(0x10, OLED_CMD);	//设置高列地址
     OLED_WR_Byte(0x40, OLED_CMD);	//设置起始行地址
