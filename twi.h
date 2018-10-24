@@ -125,8 +125,8 @@ UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata);
 #define SDA_IN TWI_PORT_DDR&=~(1<<SDA_Pin)
 
 
-#define SDA_LOW TWI_PORT&=~(1<<SDA_Pin);delay_us(IIC_DELAY_TIME)
-#define SDA_HIGH TWI_PORT|=(1<<SDA_Pin);delay_us(IIC_DELAY_TIME)
+#define SDA_LOW TWI_PORT&=~(1<<SDA_Pin)     //;delay_us(IIC_DELAY_TIME)
+#define SDA_HIGH TWI_PORT|=(1<<SDA_Pin)     //;delay_us(IIC_DELAY_TIME)
 #define SDA_Read TWI_PORT_IN&=(1<<SDA_Pin)
 
 

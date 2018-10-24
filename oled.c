@@ -157,17 +157,15 @@ static UINT8 IIC_Wait_Ack_bk(void)
 
     return ack;	//返回读取到的应答信息
 }
-
 static UINT8 IIC_Wait_Ack(void)
 {
     UINT8 ack;
-
+    
     OLED_SCLK_Clr();	//时钟线置低
     //delay_us(1);	//延迟1us
-    
     OLED_SCLK_Set();	//时钟线置高
     OLED_SCLK_Clr();	//时钟线置低
-    //delay_us(1);	//延迟1us
+                        //delay_us(1);	//延迟1us
     return ack=0;	//返回读取到的应答信息
 }
 
