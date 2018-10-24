@@ -118,14 +118,16 @@ UINT8 OLED_READ_SDIN(void)
 {
     UINT8 ack;
     SDA_IN; 
-    delay_us(IIC_DELAY_TIME); 
+    //delay_us(IIC_DELAY_TIME); 
+    delay_us(1);
     ack = TWI_PORT_IN & (1 << SDA_Pin); 
-    delay_us(IIC_DELAY_TIME); 
+    //delay_us(IIC_DELAY_TIME); 
+    delay_us(1);
     SDA_OUT;		//读取（SDA）电平
     //printf("ack is %d", ack);
     //return ack;
     //TODO: why ACK is not received?
-    return 0;   //Mandatory ack back
+    return ack=0;   //Mandatory ack back
 }
 
 
@@ -134,7 +136,7 @@ UINT8 OLED_READ_SDIN(void)
 @param			无
 @retval			无
 */
-static UINT8 IIC_Wait_Ack(void)
+static UINT8 IIC_Wait_Ack_bk(void)
 {
     UINT8 ack;
 
@@ -154,6 +156,19 @@ static UINT8 IIC_Wait_Ack(void)
     delay_us(1);	//延迟1us
 
     return ack;	//返回读取到的应答信息
+}
+
+static UINT8 IIC_Wait_Ack(void)
+{
+    UINT8 ack;
+
+    OLED_SCLK_Clr();	//时钟线置低
+    //delay_us(1);	//延迟1us
+    
+    OLED_SCLK_Set();	//时钟线置高
+    OLED_SCLK_Clr();	//时钟线置低
+    //delay_us(1);	//延迟1us
+    return ack=0;	//返回读取到的应答信息
 }
 
 
@@ -208,7 +223,7 @@ static void Write_IIC_Byte(UINT8 IIC_Byte)
     }
     OLED_SCLK_Clr();	//时钟线置低
     delay_us(1);	//延迟1us
-    printf("wait for ack");
+    //printf("wait for ack");
     while (IIC_Wait_Ack());	//从机应答
 }
 
@@ -589,7 +604,9 @@ void test_OLED(void)
 
     OLED_Init();  //OLED初始化
   
-    OLED_ShowString(30, 2, "OLED TEST");//OLED显示  OLED TEST
+    //OLED_ShowString(30, 2, "Kevin LET's GO!");//OLED显示  OLED TEST
+    OLED_ShowString(0, 2, "Kevin I LOVE U");//OLED显示  OLED TEST
+    OLED_ShowString(0, 4, "Lisa I LOVE U");//OLED显示  OLED TEST
     OLED_ShowCHinese(16, 0, 0);//OLED显示  技
     OLED_ShowCHinese(32, 0, 1);//OLED显示  新
     OLED_ShowCHinese(48, 0, 2);//OLED显示  电

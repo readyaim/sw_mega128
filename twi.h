@@ -134,8 +134,8 @@ UINT8  TWI_ReciveDATA_ACK(UINT8 *pdata);
 #define SCL_IN TWI_PORT_DDR&=~(1<<SCL_Pin)
 
 
-#define SCL_LOW TWI_PORT&=~(1<<SCL_Pin);delay_us(IIC_DELAY_TIME)
-#define SCL_HIGH TWI_PORT|=(1<<SCL_Pin);delay_us(IIC_DELAY_TIME)
+#define SCL_LOW TWI_PORT&=~(1<<SCL_Pin)     //;delay_us(IIC_DELAY_TIME)
+#define SCL_HIGH TWI_PORT|=(1<<SCL_Pin)     //;delay_us(IIC_DELAY_TIME)
 #define SCL_Read PINC&=(1<<SCL_Pin)
 
 

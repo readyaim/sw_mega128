@@ -115,6 +115,7 @@ extern UINT8 transInterval_g;
 #define Clr_Bit(val, bitn)    (val&=~(1<<(bitn))) 
 #define Get_Bit(val, bitn)    (val &(1<<(bitn))) 
 
+
 //#define TIMER0_ADC 
 #define _ATMEGA128A
 #define _DUMMY_CODE
